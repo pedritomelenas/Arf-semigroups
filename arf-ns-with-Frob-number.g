@@ -6,6 +6,12 @@ arfNumericalSemigroupsWithFrobeniusNumber:=function(f)
       if x>Sum(j) then
         return true;
       fi;
+      if x=0 then
+        return true;
+      fi;
+      if x<j[1] then
+        return false;
+      fi;
       l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
       return x in l;
   end;
@@ -34,7 +40,7 @@ arfNumericalSemigroupsWithFrobeniusNumber:=function(f)
       if arf(n-i,j) then
           Add(Cond, Concatenation([n-i],j));
       fi;
-      filt:= Filtered([2..Int((n-i)/2)], x->arf(x,j));
+      filt:= Filtered([j[1]..Int((n-i)/2)], x->arf(x,j));
       for k in filt do
         Add(T[i+k],Concatenation([k],j));
       od;
@@ -54,6 +60,13 @@ arfNumericalSemigroupsWithGenus:=function(g)
       if x>Sum(j) then
         return true;
       fi;
+      if x=0 then
+        return true;
+      fi;
+      if x<j[1] then
+        return false;
+      fi;
+
       l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
       return x in l;
   end;
@@ -83,7 +96,7 @@ arfNumericalSemigroupsWithGenus:=function(g)
       if arf(n-i+1,j) then
           Add(Gen, Concatenation([n-i+1],j));
       fi;
-      filt:= Filtered([2..Int((n-i+2)/2)], x->arf(x,j));
+      filt:= Filtered([j[1]..Int((n-i+2)/2)], x->arf(x,j));
       for k in filt do
         Add(T[i+k-1],Concatenation([k],j));
       od;
