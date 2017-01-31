@@ -1,9 +1,9 @@
 arfNumericalSemigroupsWithFrobeniusNumber:=function(f)
-  local n, T, Cond, i,j,k, arf, filt;
+  local n, T, Cond, i,j,k, inarf, filt;
 
   # tests whether x is in the Arf semigroup with multiplicity
   # sequence j
-  arf:=function(x,j)
+  inarf:=function(x,j)
       local l;
       if x>Sum(j) then
         return true;
@@ -39,10 +39,10 @@ arfNumericalSemigroupsWithFrobeniusNumber:=function(f)
 
   for i in [2..n-2] do
     for j in T[i] do
-      if arf(n-i,j) then
+      if inarf(n-i,j) then
           Add(Cond, Concatenation([n-i],j));
       fi;
-      filt:= Filtered([j[1]..Int((n-i)/2)], x->arf(x,j));
+      filt:= Filtered([j[1]..Int((n-i)/2)], x->inarf(x,j));
       for k in filt do
         Add(T[i+k],Concatenation([k],j));
       od;
@@ -55,11 +55,11 @@ end;
 
 
 arfNumericalSemigroupsWithGenus:=function(g)
-  local n, T, Gen, i,j,k, arf, filt;
+  local n, T, Gen, i,j,k, inarf, filt;
 
   # tests whether x is in the Arf semigroup with multiplicity
   # sequence j
-  arf:=function(x,j)
+  inarf:=function(x,j)
       local l;
       if x>Sum(j) then
         return true;
@@ -97,10 +97,10 @@ arfNumericalSemigroupsWithGenus:=function(g)
 
   for i in [1..n-1] do
     for j in T[i] do
-      if arf(n-i+1,j) then
+      if inarf(n-i+1,j) then
           Add(Gen, Concatenation([n-i+1],j));
       fi;
-      filt:= Filtered([j[1]..Int((n-i+2)/2)], x->arf(x,j));
+      filt:= Filtered([j[1]..Int((n-i+2)/2)], x->inarf(x,j));
       for k in filt do
         Add(T[i+k-1],Concatenation([k],j));
       od;
@@ -113,12 +113,12 @@ end;
 
 
 arfNumericalSemigroupsWithFrobeniusNumberUpTo:=function(f)
-  local n, T, i,j,k, arf, filt;
+  local n, T, i,j,k, inarf, filt;
 
 
   # tests whether x is in the Arf semigroup with multiplicity
   # sequence j
-  arf:=function(x,j)
+  inarf:=function(x,j)
       local l;
       if x>Sum(j) then
         return true;
@@ -153,7 +153,7 @@ arfNumericalSemigroupsWithFrobeniusNumberUpTo:=function(f)
 
   for i in [2..n-2] do
     for j in T[i] do
-      filt:= Filtered([j[1]..n-i], x->arf(x,j));
+      filt:= Filtered([j[1]..n-i], x->inarf(x,j));
       for k in filt do
         Add(T[i+k],Concatenation([k],j));
       od;
@@ -166,11 +166,11 @@ end;
 
 
 arfNumericalSemigroupsWithGenusUpTo:=function(g)
-  local n, T, i,j,k, arf, filt;
+  local n, T, i,j,k, inarf, filt;
 
   # tests whether x is in the Arf semigroup with multiplicity
   # sequence j
-  arf:=function(x,j)
+  inarf:=function(x,j)
       local l;
       if x>Sum(j) then
         return true;
@@ -208,7 +208,7 @@ arfNumericalSemigroupsWithGenusUpTo:=function(g)
 
   for i in [1..n-1] do
     for j in T[i] do
-      filt:= Filtered([j[1]..n-i+1], x->arf(x,j));
+      filt:= Filtered([j[1]..n-i+1], x->inarf(x,j));
       for k in filt do
         Add(T[i+k-1],Concatenation([k],j));
       od;
