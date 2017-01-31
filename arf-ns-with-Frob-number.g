@@ -24,7 +24,7 @@ arfNumericalSemigroupsWithFrobeniusNumber:=function(f)
 
   n:=f+1;
   if (n<0) or (n=1) then
-    Error("The argument cannot be the Frobenius number of any numerical semigroup");
+    return [];
   fi;
 
   if n=0 then
@@ -82,7 +82,7 @@ arfNumericalSemigroupsWithGenus:=function(g)
   fi;
 
   if (g<0) then
-    Error("The argument must be a nonnegative integer");
+    return [];
   fi;
 
   if n=0 then
@@ -139,7 +139,7 @@ arfNumericalSemigroupsWithFrobeniusNumberUpTo:=function(f)
 
   n:=f+1;
   if (n<0) or (n=1) then
-    Error("The argument cannot be the Frobenius number of any numerical semigroup");
+    return [];
   fi;
 
   if n=0 then
@@ -193,7 +193,7 @@ arfNumericalSemigroupsWithGenusUpTo:=function(g)
   fi;
 
   if (g<0) then
-    Error("The argument must be a nonnegative integer");
+    return [];
   fi;
 
   if n=0 then
