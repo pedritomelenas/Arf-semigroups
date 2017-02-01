@@ -108,7 +108,6 @@ MultiplicitySequenceListToTrees:=function(M)
     Error("The argument must be a list of multiplicity sequences");
   fi;
 
-
   s:=[];
   n:=Length(M);
   max:= Maximum(List(M, Length));
@@ -127,7 +126,6 @@ MultiplicitySequenceListToTrees:=function(M)
   for i in [1..n] do
       s[i]:=Concatenation(s[i],List([Length(s[i])+1..max],_->1));
   od;
-
 
   Info(InfoNumSgps,2,"s=",s);
   D:=List([1..n-1], i->Filtered([1..max], j->s[i][j]<>s[i+1][j]));
@@ -232,16 +230,111 @@ CompatibilityLevelOfMultiplicitySequences:=function(M)
   return k;
 end;
 
+############################################################
+#F MultiplicityTreeToMultiplicitySequenceAndRamificationVector(t)
+## t is the multiplicity of an Arf semigroup. The output is
+## the list of multiplicity sequences with the vector telling
+## where these ramify in the tree
+############################################################
+MultiplicityTreeToMultiplicitySequenceAndRamificationVector:=function(t)
+  local M, k, depth, nodes, edges, n, id, i, pathtoroot, cand, maxdepth, inarf, ismultseq, paths;
+
+
+  # tests whether x is in the Arf semigroup with multiplicity
+  # sequence j
+  inarf:=function(x,j)
+      local l;
+      if x>Sum(j) then
+        return true;
+      fi;
+      if x=0 then
+        return true;
+      fi;
+      if x<j[1] then
+        return false;
+      fi;
+      l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
+      return x in l;
+  end;
+
+  # tests if m is a multiplicity sequence
+  ismultseq := function(m)
+      local n;
+      n:=Length(m);
+      return ForAll([1..n-1], i-> inarf(m[i], m{[i+1..n]}));
+  end;
+
+  # determines the path from v to the root of the tree t
+  pathtoroot:=function(v)
+    local path, nv, e;
+    path:=[v];
+    nv:=v;
+    while true do
+      e:=First(edges, e->e[2]=nv);
+      if e=fail then
+        return path;
+      fi;
+      nv:=e[1];
+      Add(path,nv);
+    od;
+    return path;
+  end;
+
+
+  if not(IsList(t)) and Length(t)<>2 then
+    Error("The argument is a tree, given by a list: the first element is the list of nodes and second the list of edges");
+  fi;
+
+  nodes:=t[1];
+  edges:=t[2];
+  n:=Length(nodes[1][1]);
+  id:=IdentityMat(n);
+  depth:=[];#Maximum(List(nodes, x->x[2]));
+  for i in [1..n] do
+    cand:=Filtered(nodes, n-> n[1]=id[i]);
+    if cand=[] then
+      Error("The tree is not a multiplicity tree, node ", id[i], "missing");
+    fi;
+    depth[i]:=Maximum(List(cand, x->x[2]));
+  od;
+  maxdepth:=Maximum(depth);
+
+  M:=[];
+  paths:=[];
+  for i in [1..n] do
+    paths[i]:=Reversed(pathtoroot([id[i],depth[i]]));
+    M[i]:=List(paths[i], x->x[1][i]);
+  od;
+
+  if not(ForAll(M, ismultseq)) then
+    Error("The argument is not a multiplicity tree");
+  fi;
+
+  k:=[];
+  for i in [1..n-1] do
+    cand:=First(paths[i], x->x[1][i+1]=0);
+    if cand=fail then
+      Error("The argument is not a multiplicity tree");
+    fi;
+    k[i]:=cand[2]-1;
+  od;
+  if not(ForAll([1..n-1], i->k[i]<=CompatibilityLevelOfMultiplicitySequences([M[i],M[i+1]]))) then
+    Error("The tree is not compatible with any Arf good semigroup");
+  fi;
+  return [M,k];
+end;
+
 #################################################
 ##
-#F MultiplicitySequenceListToTrees(M, level)
+#F ArfGoodSemigroupFromMultiplicitySequenceListAndRamificationLevel(M, level)
 ## The input is a list of two multiplicity sequences
 ## and a level where the tree ramifies.
+## The level must be compatible with the multiplicity lists.
 ## The output is the Arf good semigroup corresponding
 ## to this tree.
 ## Implementation done with G. Zito
 #################################################
-ArfGoodSemigroupFromMultiplicitySequenceList:=function(M, level)
+ArfGoodSemigroupFromMultiplicitySequenceListAndRamificationLevel:=function(M, level)
   local C, gens, k, kk, R, B1, B2, Mh, i;
 
   if not(IsPosInt(level)) then
@@ -257,7 +350,6 @@ ArfGoodSemigroupFromMultiplicitySequenceList:=function(M, level)
   for i in [1..2] do
       Mh[i]:=Concatenation(Mh[i],List([Length(Mh[i])+1..Maximum(Length(Mh[i]),level)],_->1));
   od;
-
 
   C:=[];
   C[1]:=Sum([1..Maximum(Length(M[1]),level)], k->Mh[1][k]);
@@ -292,11 +384,10 @@ end;
 
 #################################################
 ##
-#F MultiplicitySequenceListToTrees(M, level)
-## The input is a list of two multiplicity sequences
-## and a level where the tree ramifies.
-## The output is the Arf good semigroup corresponding
-## to this tree.
+#F MultiplicityTreesWithConductor(C)
+## Outputs the set of all multiplicity trees
+## associated to all Arf good semigroups with
+## conductor C.
 ## Implementation done with G. Zito
 #################################################
 MultiplicityTreesWithConductor:=function(C)
@@ -423,7 +514,9 @@ MultiplicityTreesWithConductor:=function(C)
   return List(ags, a-> vectorToTree(a[2],a[1]));
 end;
 
+####################################################
 ### internal, for drawing
+####################################################
 treeToDot:=function(t)
   local digraph, n, e, str;
 
@@ -469,5 +562,43 @@ splashTree:=function(t)
 
   Exec("dot -Tpdf -o",Concatenation(name, ".pdf"),name);
   Exec("open ",Concatenation(name,".pdf"));
+
+end;
+
+htmlTrees:=function(ts)
+  local digraph, n, e, str, name, html, t,i;
+
+  str:=function(s)
+    return Concatenation("\"",String(s),"\"");
+  end;
+
+  html:="<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n <title>Multiplicity Trees</title>\n</head>\n<body>\n<script src=\"./viz.js\"></script>\n";
+
+  i:=1;
+  for t in ts do
+    digraph:="graph T{";
+
+    for n in t[1] do
+      digraph:=Concatenation(digraph, str(n), " [label=\"", String(n[1]),"\"];" );
+    od;
+
+    for e in t[2] do
+      digraph:=Concatenation(digraph, str(e[1]), "--", str(e[2]) ,"; " );
+    od;
+
+    digraph:=Concatenation(digraph,"}");
+    html:=Concatenation(html,"<div id=", str(i),">Hola </div>\n");
+    html:=Concatenation(html,"<script>\n document.getElementById(",str(i),").innerHTML =Viz('",digraph,"');\n</script>\n");
+    i:=i+1;
+  od;
+
+  html:=Concatenation(html, "</script>\n</body>\n</html>");
+
+  name := Filename(DirectoryTemporary(), Concatenation("trees", ".html"));
+  AppendTo(name, html);
+
+  Exec("open ",Concatenation(name,".html"));
+
+  return html;
 
 end;
