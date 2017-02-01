@@ -572,7 +572,7 @@ htmlTrees:=function(ts)
     return Concatenation("\"",String(s),"\"");
   end;
 
-  html:="<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n <title>Multiplicity Trees</title>\n</head>\n<body>\n<script src=\"./viz.js\"></script>\n";
+  html:="<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n <title>Multiplicity Trees</title>\n</head>\n<body>\n<script src=\"http://mdaines.github.io/viz.js/bower_components/viz.js/viz.js\"></script>\n";
 
   i:=1;
   for t in ts do
