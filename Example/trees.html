@@ -3,36 +3,36 @@
 <head>
 <meta charset="utf-8">
  <title>Multiplicity Trees</title>
-</head>
+<style>
+ .content {
+ display: inline-block;
+ text-align: center;
+ vertical-align: top;
+}
+</style></head>
 <body>
-<script src="http://mdaines.github.io/viz.js/bower_components/viz.js/viz.js"></script>
-<div id="1">Hola </div>
+<script  src="http://mdaines.github.io/viz.js/bower_components/viz.js/viz.js">
+</script>
+<span id="1" class='content'>Hola </span>
+<span id="2" class='content'>Hola </span>
+<span id="3" class='content'>Hola </span>
+<span id="4" class='content'>Hola </span>
 <script>
  document.getElementById("1").innerHTML =Viz('graph T{"[ [ 3, 4 ], 1 ]" [label="[ 3, \
 4 ]"];"[ [ 1, 0 ], 2 ]" [label="[ 1, 0 ]"];"[ [ 0, 1 ], 2 ]" [label="[ 0, 1 ]"];"[ [ \
 3, 4 ], 1 ]"--"[ [ 0, 1 ], 2 ]"; "[ [ 3, 4 ], 1 ]"--"[ [ 1, 0 ], 2 ]"; }');
-</script>
-<div id="2">Hola </div>
-<script>
  document.getElementById("2").innerHTML =Viz('graph T{"[ [ 3, 2 ], 1 ]" [label="[ 3, \
 2 ]"];"[ [ 1, 0 ], 2 ]" [label="[ 1, 0 ]"];"[ [ 0, 2 ], 2 ]" [label="[ 0, 2 ]"];"[ [ \
 0, 1 ], 3 ]" [label="[ 0, 1 ]"];"[ [ 0, 2 ], 2 ]"--"[ [ 0, 1 ], 3 ]"; "[ [ 3, 2 ], 1 \
 ]"--"[ [ 0, 2 ], 2 ]"; "[ [ 3, 2 ], 1 ]"--"[ [ 1, 0 ], 2 ]"; }');
-</script>
-<div id="3">Hola </div>
-<script>
  document.getElementById("3").innerHTML =Viz('graph T{"[ [ 2, 2 ], 1 ]" [label="[ 2, \
 2 ]"];"[ [ 1, 2 ], 2 ]" [label="[ 1, 2 ]"];"[ [ 1, 0 ], 3 ]" [label="[ 1, 0 ]"];"[ [ \
 0, 1 ], 3 ]" [label="[ 0, 1 ]"];"[ [ 1, 2 ], 2 ]"--"[ [ 0, 1 ], 3 ]"; "[ [ 1, 2 ], 2 \
 ]"--"[ [ 1, 0 ], 3 ]"; "[ [ 2, 2 ], 1 ]"--"[ [ 1, 2 ], 2 ]"; }');
-</script>
-<div id="4">Hola </div>
-<script>
  document.getElementById("4").innerHTML =Viz('graph T{"[ [ 2, 3 ], 1 ]" [label="[ 2, \
 3 ]"];"[ [ 1, 1 ], 2 ]" [label="[ 1, 1 ]"];"[ [ 1, 0 ], 3 ]" [label="[ 1, 0 ]"];"[ [ \
 0, 1 ], 3 ]" [label="[ 0, 1 ]"];"[ [ 1, 1 ], 2 ]"--"[ [ 0, 1 ], 3 ]"; "[ [ 1, 1 ], 2 \
 ]"--"[ [ 1, 0 ], 3 ]"; "[ [ 2, 3 ], 1 ]"--"[ [ 1, 1 ], 2 ]"; }');
-</script>
 </script>
 </body>
 </html>

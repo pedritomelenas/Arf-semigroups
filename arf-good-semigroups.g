@@ -565,15 +565,20 @@ splashTree:=function(t)
 
 end;
 
-htmlTrees:=function(ts)
+htmlTrees:=function(ts, outname)
   local digraph, n, e, str, name, html, t,i;
 
   str:=function(s)
     return Concatenation("\"",String(s),"\"");
   end;
 
-  html:="<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n <title>Multiplicity Trees</title>\n</head>\n<body>\n<script src=\"http://mdaines.github.io/viz.js/bower_components/viz.js/viz.js\"></script>\n";
+  html:="<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n <title>Multiplicity Trees</title>\n";
+  html:=Concatenation(html, "<style>\n .content {\n display: inline-block;\n text-align: center;\n vertical-align: top;\n}\n</style></head>\n<body>\n<script  src=\"http://mdaines.github.io/viz.js/bower_components/viz.js/viz.js\">\n</script>\n");
 
+  for i in [1..Length(ts)] do
+    html:=Concatenation(html,"<span id=", str(i)," class='content'>Hola </span>\n");
+  od;
+  html:=Concatenation(html,"<script>\n");
   i:=1;
   for t in ts do
     digraph:="graph T{";
@@ -587,17 +592,15 @@ htmlTrees:=function(ts)
     od;
 
     digraph:=Concatenation(digraph,"}");
-    html:=Concatenation(html,"<div id=", str(i),">Hola </div>\n");
-    html:=Concatenation(html,"<script>\n document.getElementById(",str(i),").innerHTML =Viz('",digraph,"');\n</script>\n");
+    html:=Concatenation(html," document.getElementById(",str(i),").innerHTML =Viz('",digraph,"');\n");
     i:=i+1;
   od;
 
   html:=Concatenation(html, "</script>\n</body>\n</html>");
 
-  name := Filename(DirectoryTemporary(), Concatenation("trees", ".html"));
+  name := Filename(DirectoryCurrent(), outname);
+  Print(name);
   AppendTo(name, html);
-
-  Exec("open ",Concatenation(name,".html"));
 
   return html;
 
