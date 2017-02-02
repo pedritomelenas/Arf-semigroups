@@ -752,8 +752,9 @@ htmlTrees:=function(ts, outname)
   html:=Concatenation(html, "</script>\n</body>\n</html>");
 
   name := Filename(DirectoryCurrent(), outname);
-  Print(name);
+  Print("Saved to ",name,"\n");
   PrintTo(name, html);
+  Exec("open ",name);
 
   return html;
 
