@@ -754,7 +754,9 @@ htmlTrees:=function(ts, outname)
   name := Filename(DirectoryCurrent(), outname);
   Print("Saved to ",name,"\n");
   PrintTo(name, html);
-  Exec("open ",name);
+  if ARCH_IS_MAC_OS_X() then
+    Exec("open ",name);
+  fi;
 
   return html;
 
