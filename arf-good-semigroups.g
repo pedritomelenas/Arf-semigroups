@@ -393,7 +393,20 @@ end;
 #################################################
 MultiplicityTreesWithConductor:=function(C)
   local ags, C2, ms1, ms2, car, pseq, min, M1, M2, k, k1, k2, flt, vectorToTree,
-  m, t, mt1, mt2, bound, pt, c;
+  m, t, mt1, mt2, bound, pt, c, len;
+
+  # length of a multiplicity sequence
+  len := function(l)
+    local fone;
+    fone:=First([1..Length(l)], x->l[x]=1);
+    if fone=fail then
+      return Length(l);
+    fi;
+    if fone=1 then
+      return 1;
+    fi;
+    return fone-1;
+  end;
 
   # translates vectors of ramifications to tree
   vectorToTree:=function(v,M)
@@ -459,11 +472,11 @@ MultiplicityTreesWithConductor:=function(C)
   if not(IsListOfIntegersNS(C)) then
     Error("The input must be a list of positive integers");
   fi;
-  #if not(ForAll(C, IsPosInt)) then
-  #  Error("The input must be a list of positive integers");
-  #fi;
+  if Length(C)>1 and not(ForAll(C, IsPosInt)) then
+    Error("The input must be a list of positive integers or [0]");
+  fi;
 
-  # one dimensional case
+  # one dimensional case
   if Length(C)=1 then
     ms1:=ArfNumericalSemigroupsWithFrobeniusNumber(C[1]-1);
     ms1:=List(ms1, MultiplicitySequenceOfNumericalSemigroup);
@@ -476,7 +489,7 @@ MultiplicityTreesWithConductor:=function(C)
     return List(ms1, m->[m, List([1..Length(m)-1],i-> [m[i],m[i+1]])]);
   fi;
 
-  # two dimensional case
+  # two dimensional case
   if Length(C)=2 then
     C2:=[C[1],C[2]];
 
@@ -539,19 +552,26 @@ MultiplicityTreesWithConductor:=function(C)
 
   #S_1^1(C)
   mt1:=MultiplicityTreesWithConductor(C{[1..t]});
-  mt2:=MultiplicityTreesWithConductor(C{[t+1..Length(C)]});
-
+  if t=Length(C)-1 then
+    if C[Length(C)]=1 then
+      mt2:=MultiplicityTreesWithConductor([0]);
+    else
+      mt2:=MultiplicityTreesWithConductor(C{[t+1..Length(C)]});
+    fi;
+  else
+    mt2:=MultiplicityTreesWithConductor(C{[t+1..Length(C)]});
+  fi;
   car :=Cartesian(mt1,mt2);
   for c in car do
     ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
     ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
     if t=Length(C)-1 then
-      bound:=Minimum(Maximum(ms1[2][t-1], Length(ms1[1][t])-1),
-            Length(ms2[1][1])-1,
+      bound:=Minimum(Maximum(ms1[2][t-1], len(ms1[1][t])),
+            len(ms2[1][1]),
             CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]]));
     else
-      bound:=Minimum(Maximum(ms1[2][t-1], Length(ms1[1][t])-1),
-            Maximum(Length(ms2[1][1])-1,ms2[2][1]),
+      bound:=Minimum(Maximum(ms1[2][t-1], len(ms1[1][t])),
+            Maximum(len(ms2[1][1]),ms2[2][1]),
             CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]]));
     fi;
     for pt in [1..bound] do
@@ -561,46 +581,51 @@ MultiplicityTreesWithConductor:=function(C)
 
   #S_1^2(C)
   mt1:=MultiplicityTreesWithConductor(C{[1..t]});
-  for k1 in [0..C[t+1]-1] do
-    #if k1=0 then
-    #  mt2:=MultiplicityTreesWithConductor(Concatenation([1],C{[t+2..Length(C)]}));
-    #else
+  for k1 in [1..C[t+1]-1] do
+                if t=Length(C)-1 then
+                    if k1=1 then
+                               mt2:=MultiplicityTreesWithConductor(Concatenation([0],C{[t+2..Length(C)]}));
+                else
+                               mt2:=MultiplicityTreesWithConductor(Concatenation([k1],C{[t+2..Length(C)]}));
+                fi;
+    else
       mt2:=MultiplicityTreesWithConductor(Concatenation([k1],C{[t+2..Length(C)]}));
-    #fi;
-    #if mt2=[] then
-    #  mt2:=[ [[ [[1],1] ], []] ];
-    #fi;
+    fi;
     car:=Cartesian(mt1,mt2);
     for c in car do
       ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
       ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
       if t=Length(C)-1 then
-        pt:=Length(ms2[1][1])-1+C[t+1]-k1;
+        pt:=len(ms2[1][1])+C[t+1]-k1;
       else
-        pt:=Maximum(Length(ms2[1][1])-1,ms2[2][1])+C[t+1]-k1;
+        pt:=Maximum(len(ms2[1][1]),ms2[2][1])+C[t+1]-k1;
       fi;
-      if pt<= Minimum(Maximum(ms1[2][t-1], Length(ms1[1][t])-1), CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]])) then
+      if pt<= Minimum(Maximum(ms1[2][t-1], len(ms1[1][t])), CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]])) then
         Add(ags, [Concatenation(ms1[1],ms2[1]), Concatenation(ms1[2],[pt],ms2[2])]);
       fi;
     od;
   od;
 
   #S_2^1(C)
-  mt1:=MultiplicityTreesWithConductor(C{[1..t-1]});
-  mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
 
+  mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
+  if t=2 then
+   if C[1]=1 then
+     mt1:=MultiplicityTreesWithConductor([0]);
+   else
+     mt1:=MultiplicityTreesWithConductor(C{[1..t-1]});
+   fi;
+  else
+    mt1:=MultiplicityTreesWithConductor(C{[1..t-1]});
+  fi;
   car :=Cartesian(mt1,mt2);
   for c in car do
     ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
     ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
     if t=2 then
-      if ms1[1][1]=[1] then
-        bound:=1;
-      else;
         bound:=Minimum(Length(ms1[1][1])-1,
               Maximum(Length(ms2[1][1])-1,ms2[2][1]),
               CompatibilityLevelOfMultiplicitySequences([ms1[1][1],ms2[1][1]]));
-      fi;
     else
       bound:=Minimum(Maximum(ms1[2][t-2], Length(ms1[1][t-1])-1),
             Maximum(Length(ms2[1][1])-1,ms2[2][1]),
@@ -613,32 +638,30 @@ MultiplicityTreesWithConductor:=function(C)
 
   #S_2^2
   mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
-  for k1 in [0..C[t-1]-1] do
-    #if k1=0 then
-    #  mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[1]));
-    #else
+  for k1 in [1..C[t-1]-1] do
+    if t=2 then
+      if  k1=1 then
+        mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[0]));
+      else
+        mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[k1]));
+      fi;
+    else
       mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[k1]));
-    #fi;
+    fi;
     car:=Cartesian(mt1,mt2);
     for c in car do
       ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
       ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
       if t=2 then
-        if ms1[1][1]=[1] then
-          pt:=1+C[1]-k1;
-        else;
-          pt:=Length(ms1[1][1])-1+C[1]-k1;
-        fi;
+          pt:=len(ms1[1][1])+C[1]-k1;
       else
-        pt:=Maximum(Length(ms1[1][t-1])-1,ms1[2][t-2])+C[t-1]-k1;
+        pt:=Maximum(len(ms1[1][t-1]),ms1[2][t-2])+C[t-1]-k1;
       fi;
-      if pt<= Minimum(Maximum(ms2[2][1], Length(ms2[1][1])-1), CompatibilityLevelOfMultiplicitySequences([ms1[1][t-1],ms2[1][1]])) then
+      if pt<= Minimum(Maximum(ms2[2][1], len(ms2[1][1])), CompatibilityLevelOfMultiplicitySequences([ms1[1][t-1],ms2[1][1]])) then
         Add(ags, [Concatenation(ms1[1],ms2[1]), Concatenation(ms1[2],[pt],ms2[2])]);
       fi;
     od;
   od;
-
-
   return Set(Set(ags), a->vectorToTree(a[2],a[1]));
 end;
 
