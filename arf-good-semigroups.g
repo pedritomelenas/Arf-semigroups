@@ -388,6 +388,7 @@ end;
 ## Outputs the set of all multiplicity trees
 ## associated to all Arf good semigroups with
 ## conductor C.
+## This only handles the local case C is positive
 ## Implementation done with G. Zito
 #################################################
 MultiplicityTreesWithConductor:=function(C)
@@ -458,9 +459,9 @@ MultiplicityTreesWithConductor:=function(C)
   if not(IsListOfIntegersNS(C)) then
     Error("The input must be a list of positive integers");
   fi;
-  if not(ForAll(C, IsPosInt)) then
-    Error("The input must be a list of positive integers");
-  fi;
+  #if not(ForAll(C, IsPosInt)) then
+  #  Error("The input must be a list of positive integers");
+  #fi;
 
   # one dimensional case
   if Length(C)=1 then
@@ -560,8 +561,15 @@ MultiplicityTreesWithConductor:=function(C)
 
   #S_1^2(C)
   mt1:=MultiplicityTreesWithConductor(C{[1..t]});
-  for k1 in [1..C[t+1]-1] do
-    mt2:=MultiplicityTreesWithConductor(Concatenation([k1],C{[t+2..Length(C)]}));
+  for k1 in [0..C[t+1]-1] do
+    if k1=0 then
+      mt2:=MultiplicityTreesWithConductor(Concatenation([1],C{[t+2..Length(C)]}));
+    else
+      mt2:=MultiplicityTreesWithConductor(Concatenation([k1],C{[t+2..Length(C)]}));
+    fi;
+    #if mt2=[] then
+    #  mt2:=[ [[ [[1],1] ], []] ];
+    #fi;
     car:=Cartesian(mt1,mt2);
     for c in car do
       ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
@@ -578,7 +586,6 @@ MultiplicityTreesWithConductor:=function(C)
   od;
 
   #S_2^1(C)
-  Print("S_2^1\n");
   mt1:=MultiplicityTreesWithConductor(C{[1..t-1]});
   mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
 
@@ -587,9 +594,13 @@ MultiplicityTreesWithConductor:=function(C)
     ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
     ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
     if t=2 then
-      bound:=Minimum(Length(ms1[1][t-1])-1,
-            Maximum(Length(ms2[1][1])-1,ms2[2][1]),
-            CompatibilityLevelOfMultiplicitySequences([ms1[1][t-1],ms2[1][1]]));
+      if ms1[1][1]=[1] then
+        bound:=1;
+      else;
+        bound:=Minimum(Length(ms1[1][1])-1,
+              Maximum(Length(ms2[1][1])-1,ms2[2][1]),
+              CompatibilityLevelOfMultiplicitySequences([ms1[1][1],ms2[1][1]]));
+      fi;
     else
       bound:=Minimum(Maximum(ms1[2][t-2], Length(ms1[1][t-1])-1),
             Maximum(Length(ms2[1][1])-1,ms2[2][1]),
@@ -600,17 +611,24 @@ MultiplicityTreesWithConductor:=function(C)
     od;
   od;
 
-  #S_2^2(C)
-  Print("S_2^2\n");
+  #S_2^2
   mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
-  for k1 in [1..C[t-1]-1] do
-    mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[k1]));
+  for k1 in [0..C[t-1]-1] do
+    if k1=0 then
+      mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[1]));
+    else
+      mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[k1]));
+    fi;
     car:=Cartesian(mt1,mt2);
     for c in car do
       ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
       ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
       if t=2 then
-        pt:=Length(ms1[1][t-1])-1+C[t-1]-k1;
+        if ms1[1][1]=[1] then
+          pt:=1+C[1]-k1;
+        else;
+          pt:=Length(ms1[1][1])-1+C[1]-k1;
+        fi;
       else
         pt:=Maximum(Length(ms1[1][t-1])-1,ms1[2][t-2])+C[t-1]-k1;
       fi;
@@ -621,7 +639,7 @@ MultiplicityTreesWithConductor:=function(C)
   od;
 
 
-  return List(ags, a->vectorToTree(a[2],a[1]));
+  return Set(Set(ags), a->vectorToTree(a[2],a[1]));
 end;
 
 
