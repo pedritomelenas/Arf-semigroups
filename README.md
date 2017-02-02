@@ -15,3 +15,17 @@ New implementations for
 
 
 ## Arf good (local) semigroups
+
+1. MultiplicitySequenceListToTrees
+1. CompatibilityLevelOfMultiplicitySequences
+1. MultiplicityTreeToMultiplicitySequenceAndRamificationVector
+1. ArfGoodSemigroupFromMultiplicitySequenceListAndRamificationLevel
+1. MultiplicityTreesWithConductor
+1. ArfGoodSemigroupFromMultiplicityTree
+1. ArfGoodSemigroupsWithConductor
+
+## Some drawing functions
+
+1. treeToDot
+1. splashTree
+1. htmlTrees

@@ -381,6 +381,23 @@ ArfGoodSemigroupFromMultiplicitySequenceListAndRamificationLevel:=function(M, le
   return GoodSemigroupBySmallElements(gens);
 end;
 
+#################################################
+##
+#F ArfGoodSemigroupFromMultiplicityTree(t)
+## The input is a multiplicity tree.
+## The output is the Arf good semigroup corresponding
+## to this tree.
+## Only two dimensional case is supported so far.
+#################################################
+ArfGoodSemigroupFromMultiplicityTree:=function(t)
+  local seqv;
+  seqv:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(t);
+
+  if Length(seqv[2])<>1 then
+    Error("Sorry, we only support good semigroups in N^2");
+  fi;
+  return ArfGoodSemigroupFromMultiplicitySequenceListAndRamificationLevel(seqv[1],seqv[2][1]);
+end;
 
 #################################################
 ##
@@ -388,7 +405,7 @@ end;
 ## Outputs the set of all multiplicity trees
 ## associated to all Arf good semigroups with
 ## conductor C.
-## This only handles the local case C is positive
+## This only handles the local case: C is positive
 ## Implementation done with G. Zito
 #################################################
 MultiplicityTreesWithConductor:=function(C)
@@ -666,6 +683,31 @@ MultiplicityTreesWithConductor:=function(C)
 end;
 
 
+
+#################################################
+##
+#F ArfGoodSemigroupsWithConductor(C)
+## Outputs the set of all multiplicity trees
+## associated to all Arf good semigroups with
+## conductor C.
+## So far only implemented for N^2
+## This only handles the local case: C is positive
+## Implementation done with G. Zito
+#################################################
+ArfGoodSemigroupsWithConductor:=function(C)
+  local trees, seqs;
+
+  if not(IsListOfIntegersNS(C)) and not(ForAll(C, IsPosInt)) then
+    Error("The input must be a list of positive integers");
+  fi;
+  if Length(C)<>2 then
+    Error("Sorry, we only handle goods semigroups of N^2 so far");
+  fi;
+
+  trees:= MultiplicityTreesWithConductor(C);
+
+  return List(trees, ArfGoodSemigroupFromMultiplicityTree);
+end;
 
 ####################################################
 ### internal, for drawing
