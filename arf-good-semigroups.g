@@ -562,11 +562,11 @@ MultiplicityTreesWithConductor:=function(C)
   #S_1^2(C)
   mt1:=MultiplicityTreesWithConductor(C{[1..t]});
   for k1 in [0..C[t+1]-1] do
-    if k1=0 then
-      mt2:=MultiplicityTreesWithConductor(Concatenation([1],C{[t+2..Length(C)]}));
-    else
+    #if k1=0 then
+    #  mt2:=MultiplicityTreesWithConductor(Concatenation([1],C{[t+2..Length(C)]}));
+    #else
       mt2:=MultiplicityTreesWithConductor(Concatenation([k1],C{[t+2..Length(C)]}));
-    fi;
+    #fi;
     #if mt2=[] then
     #  mt2:=[ [[ [[1],1] ], []] ];
     #fi;
@@ -614,11 +614,11 @@ MultiplicityTreesWithConductor:=function(C)
   #S_2^2
   mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
   for k1 in [0..C[t-1]-1] do
-    if k1=0 then
-      mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[1]));
-    else
+    #if k1=0 then
+    #  mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[1]));
+    #else
       mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[k1]));
-    fi;
+    #fi;
     car:=Cartesian(mt1,mt2);
     for c in car do
       ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
