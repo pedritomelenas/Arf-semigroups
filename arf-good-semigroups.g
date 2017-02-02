@@ -391,7 +391,8 @@ end;
 ## Implementation done with G. Zito
 #################################################
 MultiplicityTreesWithConductor:=function(C)
-  local ags, C2, ms1, ms2, car, pseq, min, M1, M2, k, k1, k2, flt, vectorToTree;
+  local ags, C2, ms1, ms2, car, pseq, min, M1, M2, k, k1, k2, flt, vectorToTree,
+  m, t, mt1, mt2, bound, pt, c;
 
   # translates vectors of ramifications to tree
   vectorToTree:=function(v,M)
@@ -461,58 +462,169 @@ MultiplicityTreesWithConductor:=function(C)
     Error("The input must be a list of positive integers");
   fi;
 
-  C2:=[C[1],C[2]];
-
-  ms1:=List(ArfNumericalSemigroupsWithFrobeniusNumber(C2[1]-1), MultiplicitySequenceOfNumericalSemigroup);
-  ms1:=List(ms1, l->l{[1..Length(l)-1]});
-  ms2:=List(ArfNumericalSemigroupsWithFrobeniusNumber(C2[2]-1), MultiplicitySequenceOfNumericalSemigroup);
-  ms2:=List(ms2, l->l{[1..Length(l)-1]});
-
-  car:=Cartesian(ms1,ms2);
-  ags:=[];
-  for pseq in car do
-    M1:=pseq[1];
-    M2:=pseq[2];
-    min:=Minimum(CompatibilityLevelOfMultiplicitySequences([M1,M2]), Minimum(Length(M1),Length(M2)));
-    for k in [1.. min] do
-      Add(ags,[[M1,M2],[k]]);
+  # one dimensional case
+  if Length(C)=1 then
+    ms1:=ArfNumericalSemigroupsWithFrobeniusNumber(C[1]-1);
+    ms1:=List(ms1, MultiplicitySequenceOfNumericalSemigroup);
+    for m in ms1 do
+      for k1 in [1.. Length(m)] do
+        m[k1]:=[[m[k1]],k1];
+      od;
+      #m:=[m, List([1..Length(m)-1],i-> [m[i],m[i+1]])];
     od;
-  od;
+    return List(ms1, m->[m, List([1..Length(m)-1],i-> [m[i],m[i+1]])]);
+  fi;
 
+  # two dimensional case
+  if Length(C)=2 then
+    C2:=[C[1],C[2]];
 
-  for k2 in [0..C[2]-1] do
-    ms2:=List(ArfNumericalSemigroupsWithFrobeniusNumber(k2-1), MultiplicitySequenceOfNumericalSemigroup);
-    #ms2:=Concatenation([[1]],List(ms2, l->l{[1..Length(l)-1]}));
+    ms1:=List(ArfNumericalSemigroupsWithFrobeniusNumber(C2[1]-1), MultiplicitySequenceOfNumericalSemigroup);
+    ms1:=List(ms1, l->l{[1..Length(l)-1]});
+    ms2:=List(ArfNumericalSemigroupsWithFrobeniusNumber(C2[2]-1), MultiplicitySequenceOfNumericalSemigroup);
+    ms2:=List(ms2, l->l{[1..Length(l)-1]});
+
     car:=Cartesian(ms1,ms2);
-    flt:=Filtered(car, M-> Length(M[2])+C[2]-k2-1 <= Minimum(Length(M[1])-1,CompatibilityLevelOfMultiplicitySequences(M)));
-    ags:=Concatenation(ags, List(flt, M-> [M,[Length(M[2])-1+C[2]-k2]]));
-  od;
+    ags:=[];
+    for pseq in car do
+      M1:=pseq[1];
+      M2:=pseq[2];
+      min:=Minimum(CompatibilityLevelOfMultiplicitySequences([M1,M2]), Minimum(Length(M1),Length(M2)));
+      for k in [1.. min] do
+        Add(ags,[[M1,M2],[k]]);
+      od;
+    od;
 
-  ms2:=List(ArfNumericalSemigroupsWithFrobeniusNumber(C2[2]-1), MultiplicitySequenceOfNumericalSemigroup);
-  #ms2:=List(ms2, l->l{[1..Length(l)-1]});
 
-  for k1 in [0..C[1]-1] do
-    ms1:=List(ArfNumericalSemigroupsWithFrobeniusNumber(k1-1), MultiplicitySequenceOfNumericalSemigroup);
-    #ms1:=Concatenation([[1]],List(ms1, l->l{[1..Length(l)-1]}));
-    car:=Cartesian(ms1,ms2);
-    flt:=Filtered(car, M-> Length(M[1])+C[1]-k1-1 <= Minimum(Length(M[2])-1,CompatibilityLevelOfMultiplicitySequences(M)));
-    ags:=Concatenation(ags, List(flt, M-> [M,[Length(M[1])-1+C[1]-k1]]));
-  od;
+    ms1:=List(ArfNumericalSemigroupsWithFrobeniusNumber(C2[1]-1), MultiplicitySequenceOfNumericalSemigroup);
 
-  for k1 in [0..C[1]-1] do
     for k2 in [0..C[2]-1] do
-      ms1:=List(ArfNumericalSemigroupsWithFrobeniusNumber(k1-1), MultiplicitySequenceOfNumericalSemigroup);
-      #ms1:=Concatenation([[1]],List(ms1, l->l{[1..Length(l)-1]}));
       ms2:=List(ArfNumericalSemigroupsWithFrobeniusNumber(k2-1), MultiplicitySequenceOfNumericalSemigroup);
       #ms2:=Concatenation([[1]],List(ms2, l->l{[1..Length(l)-1]}));
       car:=Cartesian(ms1,ms2);
-      flt:=Filtered(car, M-> Length(M[1])+C[1]-k1 = Length(M[2])+C[2]-k2 and Length(M[2])-1+C[2]-k2<=CompatibilityLevelOfMultiplicitySequences(M));
+      flt:=Filtered(car, M-> Length(M[2])+C[2]-k2-1 <= Minimum(Length(M[1])-1,CompatibilityLevelOfMultiplicitySequences(M)));
+      ags:=Concatenation(ags, List(flt, M-> [M,[Length(M[2])-1+C[2]-k2]]));
+    od;
+
+    ms2:=List(ArfNumericalSemigroupsWithFrobeniusNumber(C2[2]-1), MultiplicitySequenceOfNumericalSemigroup);
+    #ms2:=List(ms2, l->l{[1..Length(l)-1]});
+
+    for k1 in [0..C[1]-1] do
+      ms1:=List(ArfNumericalSemigroupsWithFrobeniusNumber(k1-1), MultiplicitySequenceOfNumericalSemigroup);
+      #ms1:=Concatenation([[1]],List(ms1, l->l{[1..Length(l)-1]}));
+      car:=Cartesian(ms1,ms2);
+      flt:=Filtered(car, M-> Length(M[1])+C[1]-k1-1 <= Minimum(Length(M[2])-1,CompatibilityLevelOfMultiplicitySequences(M)));
       ags:=Concatenation(ags, List(flt, M-> [M,[Length(M[1])-1+C[1]-k1]]));
+    od;
+
+    for k1 in [0..C[1]-1] do
+      for k2 in [0..C[2]-1] do
+        ms1:=List(ArfNumericalSemigroupsWithFrobeniusNumber(k1-1), MultiplicitySequenceOfNumericalSemigroup);
+        #ms1:=Concatenation([[1]],List(ms1, l->l{[1..Length(l)-1]}));
+        ms2:=List(ArfNumericalSemigroupsWithFrobeniusNumber(k2-1), MultiplicitySequenceOfNumericalSemigroup);
+        #ms2:=Concatenation([[1]],List(ms2, l->l{[1..Length(l)-1]}));
+        car:=Cartesian(ms1,ms2);
+        flt:=Filtered(car, M-> Length(M[1])+C[1]-k1 = Length(M[2])+C[2]-k2 and Length(M[2])-1+C[2]-k2<=CompatibilityLevelOfMultiplicitySequences(M));
+        ags:=Concatenation(ags, List(flt, M-> [M,[Length(M[1])-1+C[1]-k1]]));
+      od;
+    od;
+
+    return List(ags, a-> vectorToTree(a[2],a[1]));
+  fi; #end of the two dimensional case
+
+  t:=CeilingOfRational(Length(C)/2);
+
+  ags:=[];
+
+  #S_1^1(C)
+  mt1:=MultiplicityTreesWithConductor(C{[1..t]});
+  mt2:=MultiplicityTreesWithConductor(C{[t+1..Length(C)]});
+
+  car :=Cartesian(mt1,mt2);
+  for c in car do
+    ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
+    ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
+    if t=Length(C)-1 then
+      bound:=Minimum(Maximum(ms1[2][t-1], Length(ms1[1][t])-1),
+            Length(ms2[1][1])-1,
+            CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]]));
+    else
+      bound:=Minimum(Maximum(ms1[2][t-1], Length(ms1[1][t])-1),
+            Maximum(Length(ms2[1][1])-1,ms2[2][1]),
+            CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]]));
+    fi;
+    for pt in [1..bound] do
+      Add(ags, [Concatenation(ms1[1],ms2[1]), Concatenation(ms1[2],[pt],ms2[2])]);
     od;
   od;
 
-  return List(ags, a-> vectorToTree(a[2],a[1]));
+  #S_1^2(C)
+  mt1:=MultiplicityTreesWithConductor(C{[1..t]});
+  for k1 in [1..C[t+1]-1] do
+    mt2:=MultiplicityTreesWithConductor(Concatenation([k1],C{[t+2..Length(C)]}));
+    car:=Cartesian(mt1,mt2);
+    for c in car do
+      ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
+      ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
+      if t=Length(C)-1 then
+        pt:=Length(ms2[1][1])-1+C[t+1]-k1;
+      else
+        pt:=Maximum(Length(ms2[1][1])-1,ms2[2][1])+C[t+1]-k1;
+      fi;
+      if pt<= Minimum(Maximum(ms1[2][t-1], Length(ms1[1][t])-1), CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]])) then
+        Add(ags, [Concatenation(ms1[1],ms2[1]), Concatenation(ms1[2],[pt],ms2[2])]);
+      fi;
+    od;
+  od;
+
+  #S_2^1(C)
+  Print("S_2^1\n");
+  mt1:=MultiplicityTreesWithConductor(C{[1..t-1]});
+  mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
+
+  car :=Cartesian(mt1,mt2);
+  for c in car do
+    ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
+    ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
+    if t=2 then
+      bound:=Minimum(Length(ms1[1][t-1])-1,
+            Maximum(Length(ms2[1][1])-1,ms2[2][1]),
+            CompatibilityLevelOfMultiplicitySequences([ms1[1][t-1],ms2[1][1]]));
+    else
+      bound:=Minimum(Maximum(ms1[2][t-2], Length(ms1[1][t-1])-1),
+            Maximum(Length(ms2[1][1])-1,ms2[2][1]),
+            CompatibilityLevelOfMultiplicitySequences([ms1[1][t-1],ms2[1][1]]));
+    fi;
+    for pt in [1..bound] do #here pt is "ptminusone" we do not waste a variable
+      Add(ags, [Concatenation(ms1[1],ms2[1]), Concatenation(ms1[2],[pt],ms2[2])]);
+    od;
+  od;
+
+  #S_2^2(C)
+  Print("S_2^2\n");
+  mt2:=MultiplicityTreesWithConductor(C{[t..Length(C)]});
+  for k1 in [1..C[t-1]-1] do
+    mt1:=MultiplicityTreesWithConductor(Concatenation(C{[1..t-2]},[k1]));
+    car:=Cartesian(mt1,mt2);
+    for c in car do
+      ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
+      ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
+      if t=2 then
+        pt:=Length(ms1[1][t-1])-1+C[t-1]-k1;
+      else
+        pt:=Maximum(Length(ms1[1][t-1])-1,ms1[2][t-2])+C[t-1]-k1;
+      fi;
+      if pt<= Minimum(Maximum(ms2[2][1], Length(ms2[1][1])-1), CompatibilityLevelOfMultiplicitySequences([ms1[1][t-1],ms2[1][1]])) then
+        Add(ags, [Concatenation(ms1[1],ms2[1]), Concatenation(ms1[2],[pt],ms2[2])]);
+      fi;
+    od;
+  od;
+
+
+  return List(ags, a->vectorToTree(a[2],a[1]));
 end;
+
+
 
 ####################################################
 ### internal, for drawing
@@ -600,7 +712,7 @@ htmlTrees:=function(ts, outname)
 
   name := Filename(DirectoryCurrent(), outname);
   Print(name);
-  AppendTo(name, html);
+  PrintTo(name, html);
 
   return html;
 
