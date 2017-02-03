@@ -1,3 +1,91 @@
+#######
+#F Computes the Arf characters of the Arf good semigroup associated
+## to the multiplicity sequence list M and ramification vector k
+##
+#######
+ArfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
+  local arfchrpr,r,pchar, ismultseq, inarf, i,j, l,ms, b,n, V, max, G;
+
+  # tests whether x is in the Arf semigroup with multiplicity
+  # sequence j
+  inarf:=function(x,j)
+      local l;
+      if x>Sum(j) then
+        return true;
+      fi;
+      if x=0 then
+        return true;
+      fi;
+      if x<j[1] then
+        return false;
+      fi;
+      l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
+      return x in l;
+  end;
+
+  # tests if m is a multiplicity sequence
+  ismultseq := function(m)
+      local n;
+      n:=Length(m);
+      return ForAll([1..n-1], i-> inarf(m[i], m{[i+1..n]}));
+  end;
+  V:=function(idx)
+      return List([1..n], i->Sum(M[i]{[1..idx[i]]}));
+  end;
+
+  if not(IsTable(M)) then
+    Error("The first argument must be a list of multiplicity sequences");
+  fi;
+
+  if not(ForAll(Union(M), IsPosInt)) then
+    Error("The argument must be a list of multiplicity sequences");
+  fi;
+
+  if not(ForAll(M, ismultseq)) then
+    Error("The argument must be a list of multiplicity sequences");
+  fi;
+
+  if not(IsList(k) and ForAll(k,IsPosInt)) then
+    Error("The second argument must be a list of positive integers");
+  fi;
+
+  if Length(M)-1<>Length(k) then
+    Error("There is a problem with dimensions");
+  fi;
+  ### ADD dimension one case here
+
+  n:=Length(M);
+
+  if not(ForAll([1..n-1], i->k[i]<=CompatibilityLevelOfMultiplicitySequences([M[i],M[i+1]]))) then
+    Error("The arguments do not correspond to an Arf good semigroup (not compatible)");
+  fi;
+  r:=[];
+  pchar:=[];
+  for l in [1..n] do
+    if M[l][Length(M[l])]=1 then
+      ms:=Concatenation(M[l],[1]);
+    else
+      ms:=Concatenation(M[l],[1,1]);
+    fi;
+    r[l]:=List(ms,_->0);
+    for i in [1..Length(ms)] do
+      b:=First([i+1..Length(ms)], j->ms[i]=Sum(ms{[i+1..j]}));
+      if b=fail then
+        b:=Length(ms);
+      fi;
+      for j in [i+1..b] do
+        r[l][j]:=r[l][j]+1;
+      od;
+    od;
+    pchar[l]:=Filtered([1..Length(ms)-1], j->r[l][j]<r[l][j+1]);
+  od;
+  max:=Union(pchar);
+  G:=List(max, i->V(List([1..n],_->i)));
+  return G;
+  ##NOT COMPLETE
+end;
+
+
 #################################################
 ##
 #F MultiplicitySequenceListAndRamificationVectorToTree(M, k)
