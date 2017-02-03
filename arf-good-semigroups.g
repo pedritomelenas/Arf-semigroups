@@ -1,5 +1,131 @@
 #################################################
 ##
+#F MultiplicitySequenceListAndRamificationVectorToTree(M, k)
+## The input is a list of multiplicity sequences and a vector
+## indicating where the treee ramifies.
+## The output is the corresponding multiplicity tree.
+## Implementation done with G. Zito
+#################################################
+MultiplicitySequenceListAndRamificationVectorToTree:=function(M,k)
+  local ismultseq, n, inarf, nodes, edges, i, Mh,
+   depth, level, id, j, pn, nd, leaves, sons, max;
+
+    # tests whether x is in the Arf semigroup with multiplicity
+    # sequence j
+    inarf:=function(x,j)
+        local l;
+        if x>Sum(j) then
+          return true;
+        fi;
+        if x=0 then
+          return true;
+        fi;
+        if x<j[1] then
+          return false;
+        fi;
+        l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
+        return x in l;
+    end;
+
+    # tests if m is a multiplicity sequence
+    ismultseq := function(m)
+        local n;
+        n:=Length(m);
+        return ForAll([1..n-1], i-> inarf(m[i], m{[i+1..n]}));
+    end;
+
+  if not(IsTable(M)) then
+    Error("The first argument must be a list of multiplicity sequences");
+  fi;
+
+  if not(ForAll(Union(M), IsPosInt)) then
+    Error("The argument must be a list of multiplicity sequences");
+  fi;
+
+  if not(ForAll(M, ismultseq)) then
+    Error("The argument must be a list of multiplicity sequences");
+  fi;
+
+  if not(IsList(k) and ForAll(k,IsPosInt)) then
+    Error("The second argument must be a list of positive integers");
+  fi;
+
+  if Length(M)-1<>Length(k) then
+    Error("There is a problem with dimensions");
+  fi;
+
+  if Length(M)=1 then
+    nodes:=[];
+    for i in [1..Length(M[1])] do
+      nodes[i]:=[[M[1][i]],i];
+    od;
+    return [nodes,List([1..Length(nodes)-1],i-> [nodes[i],nodes[i+1]])];
+  fi;
+
+  n:=Length(M);
+
+  if not(ForAll([1..n-1], i->k[i]<=CompatibilityLevelOfMultiplicitySequences([M[i],M[i+1]]))) then
+    Error("The arguments do not correspond to an Arf good semigroup (not compatible)");
+  fi;
+
+  id:=IdentityMat(n);
+  max:= Maximum(List(M, Length));
+  depth:=Maximum(Maximum(k)+1,max+1);
+
+  Mh:=ShallowCopy(M);
+  for i in [1..n] do
+      Mh[i]:=Concatenation(Mh[i],List([Length(Mh[i])+1..depth],_->1));
+  od;
+
+  edges:=[];
+  nodes:=[];
+  leaves:=[];
+  for level in [1..depth] do
+    pn:=List([1..n], j->Mh[j][level]*id[j]);
+    #Print(pn,"\n");
+    nd:=pn[1];
+    for j in [2..n] do
+      if level<=k[j-1] then
+        nd:=nd+pn[j];
+      else
+        if Sum(nd)=1 and not(nd in leaves) then
+          Add(nodes,[nd,level]);
+          Add(leaves,nd);
+        fi;
+        if Sum(nd)>1 then
+          Add(nodes,[nd,level]);
+        fi;
+        nd:=pn[j];
+        #Print("Nodes so far for ",v," ", nodes, "\n");
+      fi;
+    od;
+    if Sum(nd)=1 and not(nd in leaves) then
+      Add(nodes,[nd,level]);
+      Add(leaves,nd);
+    fi;
+    if Sum(nd)>1 then
+      Add(nodes,[nd,level]);
+    fi;
+    #Print("Nodes so far for ",v," ", nodes, "\n");
+  od;
+
+  for level in [1..depth-1] do
+    pn:=Filtered(nodes, x->x[2]=level);
+    for nd in pn do
+      sons:=Filtered(nodes, x->(x[2]=level+1) and x[1]*nd[1]<>0);
+      #Print("Nodes connected to ",nd," are ",sons,"\n");
+      sons:=List(sons, x->[nd,x]);
+      #Print("Adding edges ",sons);
+      edges:=Union(edges, sons);
+      #Print("New edges ", edges);
+    od;
+  od;
+  return [nodes,edges];
+end;
+
+
+#################################################
+##
 #F MultiplicitySequenceListToTrees(M)
 ## The input is a list of multiplicity sequences,
 ## and the output is the list of all possible
@@ -697,7 +823,7 @@ end;
 ArfGoodSemigroupsWithConductor:=function(C)
   local trees, seqs;
 
-  if not(IsListOfIntegersNS(C)) and not(ForAll(C, IsPosInt)) then
+  if not(IsListOfIntegersNS(C) and ForAll(C, IsPosInt)) then
     Error("The input must be a list of positive integers");
   fi;
   if Length(C)<>2 then
@@ -707,6 +833,58 @@ ArfGoodSemigroupsWithConductor:=function(C)
   trees:= MultiplicityTreesWithConductor(C);
 
   return List(trees, ArfGoodSemigroupFromMultiplicityTree);
+end;
+
+#####################################################
+#F ArfClosureOfSetOfVectors(vs)
+## vs is a set of vectors in the positive orthant.
+## The ouput is an multiplicity sequence list and
+## ramification vector corresponding to
+## the least (local) Arf good semigroup containing vs
+#####################################################
+ArfClosureOfSetOfVectors:=function(vs)
+  local M, k, n, trvs, pos, U, MIN,i;
+
+  pos:=function(h,i)
+    local p;
+    p:=First([1..Length(M[i])], j->Sum(M[i]{[1..j]})=h);
+    if p<>fail then
+      return p;
+    fi;
+    return Length(M[i])+h-Sum(M[i]);
+  end;
+  if not(IsRectangularTable(vs)) then
+    Error("The input must be a list of vectors (lists)");
+  fi;
+  if not(ForAll(Union(vs), IsPosInt)) then
+    Error("The vectors must have positive integer coordinates");
+  fi;
+  trvs:=TransposedMat(vs);
+  if not(ForAll(trvs, v-> Gcd(v)=1)) then
+    Error("The gcd of the coordinates must be 1 for all coordinates (infinite decreasing chain)");
+  fi;
+
+  n:=Length(vs[1]);
+  if not(ForAll([1..n-1], i->ForAny(vs, g-> g[i]<>g[i+1]))) then
+    Error("There is not such an Arf good semigroup (infinite decreasing chain)");
+  fi;
+
+  M:=[];
+  k:=[];
+
+  M:=List([1..n], i->MultiplicitySequenceOfNumericalSemigroup(ArfNumericalSemigroupClosure(NumericalSemigroup(trvs[i]))));
+  U:=Filtered([1..n-1], i->ForAll(vs, g->pos(g[i],i)=pos(g[i+1],i+1)));
+  k:=[];
+  for i in [1..n-1] do
+    if not(i in U) then
+      k[i]:=Minimum(CompatibilityLevelOfMultiplicitySequences([M[i],M[i+1]]),
+          Minimum(List(Filtered(vs, g->pos(g[i],i)<>pos(g[i+1],i+1)), g->Minimum(pos(g[i],i),pos(g[i+1],i+1)))));
+    else
+      k[i]:=CompatibilityLevelOfMultiplicitySequences([M[i],M[i+1]]);
+    fi;
+  od;
+  return [M,k];
+
 end;
 
 ####################################################
