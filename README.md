@@ -2,7 +2,9 @@
 
 Algortithms for Arf good semigroups
 
-These algorithms use the ideas by Giuseppe Zito (U Catania)
+These algorithms use the ideas by Giuseppe Zito (U Catania)ç
+
+They will be part of the [GAP](http://www.gap-system.org) package [numericalsgps](http://www.gap-system.org/Packages/numericalsgps.html).
 
 ## Numerical semigroups
 
