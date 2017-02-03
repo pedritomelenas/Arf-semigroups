@@ -977,7 +977,9 @@ htmlTrees:=function(ts, outname)
   if ARCH_IS_MAC_OS_X() then
     Exec("open ",name);
   fi;
-
+  if ARCH_IS_WINDOWS() then
+    Exec("start firefox ",name);
+  fi;
   return html;
 
 end;
