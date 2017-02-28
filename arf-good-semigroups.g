@@ -1,10 +1,10 @@
 #######
-#F Computes the Arf characters of the Arf good semigroup associated
+#F Computes a minimal set of vectors G with Arf closure equal to an Arf good semigroup associated
 ## to the multiplicity sequence list M and ramification vector k
 ##
 #######
-ArfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
-  local arfchrpr,r,pchar, ismultseq, inarf, i,j, l,ms, b,n, V, max, G;
+arfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
+  local arfchrpr,r,pchar,LB,H1,H2, H3,ismultseq, inarf, minset,i,j, l,ms, b,n, V,T,T1, max, G;
 
   # tests whether x is in the Arf semigroup with multiplicity
   # sequence j
@@ -22,7 +22,74 @@ ArfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
       l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
       return x in l;
   end;
-
+# function that is useful to find a set of vectors that satisfies
+# the condition on the remification vector
+  minset:=function(s)
+  local ags,k,j,i,a1,a2,l1,l2,m1,m2;
+    if Length(s)=0 then
+      ags:=[];
+      return ags;
+    fi;
+    if Length(s)=1 then
+      ags:=[[s[1],s[1]+1]];
+      return ags;
+    fi;
+    k:=First([1..Length(s)],j-> s[j]=Minimum(s));
+  m1:=minset(s{[1..k-1]});
+  m2:=minset(s{[k+1..Length(s)]});
+    a1:=Length(m1);
+    a2:=Length(m2);
+    ags:=List([1..Minimum(Maximum(a1+1,a2),Maximum(a1,a2+1))]);
+    if a1+1<=a2 then
+        if Minimum(s)<> m2[1][1] then
+          ags[1]:=m2[1];
+            for i in [1..k] do
+              ags[1]:=Concatenation([Minimum(s)],ags[1]);
+            od;                   else
+            ags[1]:=m2[1];
+            for i in [1..k] do
+              ags[1]:=Concatenation([Minimum(s)+1],ags[1]);
+            od;
+          fi;
+    for i in [2..a1+1] do
+      ags[i]:=Concatenation(m1[i-1],m2[i]);
+    od;
+    for i in [a1+2..a2] do
+                  for j in [1..k] do
+                      ags[i]:=Concatenation([m2[i][1]],m2[i]);
+                    od;
+                  od;
+    fi;
+    if a2+1<=a1 then
+       if Minimum(s)<> m1[1][k] then
+         ags[1]:=m1[1];
+           for i in [k+1..Length(s)+1] do
+             ags[1]:=Concatenation(ags[1],[Minimum(s)]);
+           od;                   else
+         ags[1]:=m1[1];
+           for i in [k+1..Length(s)+1] do
+             ags[1]:=Concatenation(ags[1],[Minimum(s)+1]);
+           od;
+         fi;
+   for i in [2..a2+1] do
+         ags[i]:=Concatenation(m1[i],m2[i-1]);
+    od;
+    for i in [a2+2..a1] do
+                 for j in [k+1..Length(s)+1] do
+                    ags[i]:=Concatenation(m1[i],[m1[1][k]]);
+                    od;
+                  od;
+    fi;
+    if a1=a2 then
+          l1:=List([1..k],i->Minimum(s));
+          l2:=List([k+1..Length(s)+1],i->Minimum(s)+1);
+          ags[1]:=Concatenation(l1,l2);
+          for i in [1..a2] do
+            ags[i+1]:=Concatenation(m1[i],m2[i]);
+          od;
+   fi;
+     return ags;
+  end;
   # tests if m is a multiplicity sequence
   ismultseq := function(m)
       local n;
@@ -30,7 +97,15 @@ ArfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
       return ForAll([1..n-1], i-> inarf(m[i], m{[i+1..n]}));
   end;
   V:=function(idx)
-      return List([1..n], i->Sum(M[i]{[1..idx[i]]}));
+    local i,Mh;
+    n:=Length(M);
+  Mh:=ShallowCopy(M);
+    for i in [1..n] do
+      for j in [Length(Mh[i])..Maximum(Length(Mh[i]),idx[i])] do
+        Mh[i]:=Concatenation(Mh[i],[1]);
+      od;
+    od;
+      return List([1..n], i->Sum(Mh[i]{[1..idx[i]]}));
   end;
 
   if not(IsTable(M)) then
@@ -52,7 +127,6 @@ ArfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
   if Length(M)-1<>Length(k) then
     Error("There is a problem with dimensions");
   fi;
-  ### ADD dimension one case here
 
   n:=Length(M);
 
@@ -79,10 +153,38 @@ ArfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
     od;
     pchar[l]:=Filtered([1..Length(ms)-1], j->r[l][j]<r[l][j+1]);
   od;
-  max:=Union(pchar);
-  G:=List(max, i->V(List([1..n],_->i)));
-  return G;
-  ##NOT COMPLETE
+    max:=Maximum(Union(pchar))+1;
+  T:=minset(k);
+  T1:=List(Filtered([1..Length(T)],j->Length(Filtered([1..n],i->(T[j][i] in pchar[i])))=0),u->T[u]);
+  for i in Difference(T,T1) do
+    for j in [1..n] do
+      RemoveSet(pchar[j],i[j]);
+    od;
+  od;
+  LB:=Maximum(List([1..n],j->Length(pchar[j])));
+  G:=List([1..LB]);
+  for i in [1..LB] do
+    G[i]:=List([1..n]);
+     for j in [1..n] do
+       if i<=Length(pchar[j]) then
+         G[i][j]:=pchar[j][i];
+       else
+         G[i][j]:=max;
+       fi;
+     od;
+   od;
+H1:=List( Union(G,T) , i->V(i));
+for i in T1 do
+  H3:=ShallowCopy(H1);
+   RemoveSet(H3,V(i));
+  if not(ForAll([1..n-1], i->ForAny(H3, g-> g[i]<>g[i+1]))) then
+  else
+  if ArfClosureOfSetOfVectors(H1)=ArfClosureOfSetOfVectors(H3) then
+    RemoveSet(H1,V(i));
+  fi;
+fi;
+od;
+  return H1;
 end;
 
 
@@ -1070,4 +1172,204 @@ htmlTrees:=function(ts, outname)
   fi;
   return html;
 
+end;
+
+#####################################################
+#F MultiplicityTreesWithDimandGenus:=function(dim,gen)
+## dim is a positive integer, gen is a non-negative integer
+## The ouput is the set of the trees of the Arf local good semigroups
+## with genus gen and dimension dim
+#####################################################
+MultiplicityTreesWithDimandGenus:=function(dim,gen)
+  local ags, C2, ms1, ms2, car, pseq, min, M1, M2, k, k1, k2, flt, vectorToTree,
+  m, t, mt1, mt2, bound, p, c, arfNumericalSemigroupsWithGenus,len;
+
+  # length of a multiplicity sequence
+  len := function(l)
+    local fone;
+    fone:=First([1..Length(l)], x->l[x]=1);
+    if fone=fail then
+      return Length(l);
+    fi;
+    if fone=1 then
+      return 1;
+    fi;
+    return fone-1;
+  end;
+  arfNumericalSemigroupsWithGenus:=function(g)
+    local n, T, Gen, i,j,k, inarf, filt;
+
+    # tests whether x is in the Arf semigroup with multiplicity
+    # sequence j
+    inarf:=function(x,j)
+        local l;
+        if x>Sum(j) then
+          return true;
+        fi;
+        if x=0 then
+          return true;
+        fi;
+        if x<j[1] then
+          return false;
+        fi;
+
+        l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
+        return x in l;
+    end;
+
+    n:=g;
+
+    if(not(IsInt(g))) then
+      Error("The argument must be an integer");
+    fi;
+
+    if (g<0) then
+      return [];
+    fi;
+
+    if n=0 then
+      return [NumericalSemigroup(1)];
+    fi;
+
+    Gen:=List([[n+1]]);
+    T:=[];
+    for i in [1..n-1] do
+      T[i]:=[[i+1]];
+    od;
+
+    for i in [1..n-1] do
+      for j in T[i] do
+        if inarf(n-i+1,j) then
+            Add(Gen, Concatenation([n-i+1],j));
+        fi;
+        filt:= Filtered([j[1]..Int((n-i+2)/2)], x->inarf(x,j));
+        for k in filt do
+          Add(T[i+k-1],Concatenation([k],j));
+        od;
+      od;
+
+    od;
+    #return Cond;
+    return List(Gen, j-> NumericalSemigroupBySmallElementsNC(Concatenation([0],List([1..Length(j)], i-> Sum(j{[1..i]})))));
+  end;
+  # translates vectors of ramifications to tree
+  vectorToTree:=function(v,M)
+    local edges, nodes, depth, level, k, id, i, j, pn, nd, leaves, sons, max, n, Mh;
+
+    max:= Maximum(List(M, Length));
+    n:=Length(M);
+    id:=IdentityMat(n);
+    depth:=Maximum(Maximum(v)+1,max+1);
+
+    Mh:=ShallowCopy(M);
+    for i in [1..n] do
+        Mh[i]:=Concatenation(Mh[i],List([Length(Mh[i])+1..depth],_->1));
+    od;
+
+    edges:=[];
+    nodes:=[];
+    leaves:=[];
+    for level in [1..depth] do
+      pn:=List([1..n], j->Mh[j][level]*id[j]);
+      #Print(pn,"\n");
+      nd:=pn[1];
+      for j in [2..n] do
+        if level<=v[j-1] then
+          nd:=nd+pn[j];
+        else
+          if Sum(nd)=1 and not(nd in leaves) then
+            Add(nodes,[nd,level]);
+            Add(leaves,nd);
+          fi;
+          if Sum(nd)>1 then
+            Add(nodes,[nd,level]);
+          fi;
+          nd:=pn[j];
+          #Print("Nodes so far for ",v," ", nodes, "\n");
+        fi;
+      od;
+      if Sum(nd)=1 and not(nd in leaves) then
+        Add(nodes,[nd,level]);
+        Add(leaves,nd);
+      fi;
+      if Sum(nd)>1 then
+        Add(nodes,[nd,level]);
+      fi;
+      #Print("Nodes so far for ",v," ", nodes, "\n");
+    od;
+
+    for level in [1..depth-1] do
+      pn:=Filtered(nodes, x->x[2]=level);
+      for nd in pn do
+        sons:=Filtered(nodes, x->(x[2]=level+1) and x[1]*nd[1]<>0);
+        #Print("Nodes connected to ",nd," are ",sons,"\n");
+        sons:=List(sons, x->[nd,x]);
+        #Print("Adding edges ",sons);
+        edges:=Union(edges, sons);
+        #Print("New edges ", edges);
+      od;
+    od;
+    return [nodes,edges];
+  end;
+if not IsPosInt(gen) and not gen=0  then
+  Error("The second input (genus) must be a non negative integer");
+fi;
+
+if not IsPosInt(dim)  then
+  Error("The first input (dimension) must be a positive integer");
+fi;
+
+  # one dimensional case
+  if dim=1 then
+    ms1:=arfNumericalSemigroupsWithGenus(gen);
+    ms1:=List(ms1, MultiplicitySequenceOfNumericalSemigroup);
+    for m in ms1 do
+      for k1 in [1.. Length(m)] do
+        m[k1]:=[[m[k1]],k1];
+      od;
+      #m:=[m, List([1..Length(m)-1],i-> [m[i],m[i+1]])];
+    od;
+    return List(ms1, m->[m, List([1..Length(m)-1],i-> [m[i],m[i+1]])]);
+  fi;
+
+
+
+  t:=Int(Floor(Float(dim/2)));
+
+  ags:=[];
+
+for p in [1..gen-dim+2] do
+    for k in [t-1..CeilingOfRational((gen-p-1)/2)] do
+            mt1:=MultiplicityTreesWithDimandGenus(t,k);
+            mt2:=MultiplicityTreesWithDimandGenus(dim-t,gen-p-k);
+            car :=Cartesian(mt1,mt2);
+                                for c in car do
+                                ms1:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[1]);
+                                ms2:=MultiplicityTreeToMultiplicitySequenceAndRamificationVector(c[2]);
+                                     if p<=CompatibilityLevelOfMultiplicitySequences([ms1[1][t],ms2[1][1]]) then
+                                           Add(ags, [Concatenation(ms1[1],ms2[1]), Concatenation(ms1[2],[p],ms2[2])]);
+                                          Add(ags, Concatenation([Reversed(Concatenation(ms1[1],ms2[1]))],[Reversed(Concatenation(ms1[2],[p],ms2[2]))]));
+                                     fi;
+                                               od;
+                                     od;
+                          od;
+  return Set(Set(ags), a->vectorToTree(a[2],a[1]));
+end;
+
+#####################################################
+#F MultiplicityTreesWithGenus:=function(gen)
+## gen is a non-negative integer
+## The ouput is the set of the trees of the Arf local good semigroups
+## with genus gen in all dimensions
+#####################################################
+MultiplicityTreesWithGenus:=function(gen)
+local ags,i;
+if not IsPosInt(gen) and not gen=0  then
+  Error("The second input (genus) must be a non negative integer");
+fi;
+ags:=[];
+for i in [1..gen+1] do
+  ags:=Union(ags,MultiplicityTreesWithDimandGenus(i,gen));
+od;
+return ags;
 end;
