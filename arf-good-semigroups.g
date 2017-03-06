@@ -24,72 +24,122 @@ arfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
   end;
 # function that is useful to find a set of vectors that satisfies
 # the condition on the remification vector
-  minset:=function(s)
-  local ags,k,j,i,a1,a2,l1,l2,m1,m2;
-    if Length(s)=0 then
-      ags:=[];
-      return ags;
-    fi;
-    if Length(s)=1 then
-      ags:=[[s[1],s[1]+1]];
-      return ags;
-    fi;
-    k:=First([1..Length(s)],j-> s[j]=Minimum(s));
-  m1:=minset(s{[1..k-1]});
-  m2:=minset(s{[k+1..Length(s)]});
-    a1:=Length(m1);
+minset:=function(s)
+local ags,k,j,i,a1,a2,l1,l2,m1,m2,Temp,Ins,Ins11,Ins12,Ins21,Ins22,A;
+  if Length(s)=0 then
+    ags:=[];
+    return ags;
+  fi;
+  if Length(s)=1 then
+    ags:=[[s[1],s[1]+1]];
+    return ags;
+  fi;
+  Ins:=Filtered([1..Length(s)],j-> s[j]=Minimum(s));
+  Temp:=[];
+  for k in Ins do
+    m1:=minset(s{[1..k-1]});
+    m2:=minset(s{[k+1..Length(s)]});
+     a1:=Length(m1);
     a2:=Length(m2);
-    ags:=List([1..Minimum(Maximum(a1+1,a2),Maximum(a1,a2+1))]);
-    if a1+1<=a2 then
-        if Minimum(s)<> m2[1][1] then
-          ags[1]:=m2[1];
-            for i in [1..k] do
-              ags[1]:=Concatenation([Minimum(s)],ags[1]);
-            od;                   else
-            ags[1]:=m2[1];
-            for i in [1..k] do
-              ags[1]:=Concatenation([Minimum(s)+1],ags[1]);
-            od;
-          fi;
-    for i in [2..a1+1] do
-      ags[i]:=Concatenation(m1[i-1],m2[i]);
-    od;
-    for i in [a1+2..a2] do ags[i]:=m2[i];
-                  for j in [1..k] do
-                      ags[i]:=Concatenation([m2[i][1]],ags[i]);
-                    od;
-                  od;
-    fi;
-    if a2+1<=a1 then
-       if Minimum(s)<> m1[1][k] then
-         ags[1]:=m1[1];
-           for i in [k+1..Length(s)+1] do
-             ags[1]:=Concatenation(ags[1],[Minimum(s)]);
-           od;                   else
-         ags[1]:=m1[1];
-           for i in [k+1..Length(s)+1] do
-             ags[1]:=Concatenation(ags[1],[Minimum(s)+1]);
+    Ins11:=Filtered([1..a1],i->m1[i][k]=Minimum(s)); Ins12:=Filtered([1..a2],i->m2[i][1]<>Minimum(s));
+    Ins21:=Filtered([1..a1],i->m1[i][k]<>Minimum(s)); Ins22:=Filtered([1..a2],i->m2[i][1]=Minimum(s));
+    if Length(Ins11)<>0 and Length(Ins12)<>0 then
+          ags:=List([1..Maximum(a1,a2)]);
+         ags[1]:=Concatenation(m1[Ins11[1]],m2[Ins12[1]]);
+          RemoveSet(m1,m1[Ins11[1]]); RemoveSet(m2,m2[Ins12[1]]);
+          for i in [1..Minimum(a1-1,a2-1)] do
+                    ags[i+1]:=Concatenation(m1[i],m2[i]);
            od;
-         fi;
-   for i in [2..a2+1] do
-         ags[i]:=Concatenation(m1[i],m2[i-1]);
-    od;
-    for i in [a2+2..a1] do ags[i]:=m1[1];
-                 for j in [k+1..Length(s)+1] do
-                    ags[i]:=Concatenation(ags[i],[m1[1][k]]);
-                    od;
-                  od;
-    fi;
-    if a1=a2 then
-          l1:=List([1..k],i->Minimum(s));
-          l2:=List([k+1..Length(s)+1],i->Minimum(s)+1);
-          ags[1]:=Concatenation(l1,l2);
-          for i in [1..a2] do
-            ags[i+1]:=Concatenation(m1[i],m2[i]);
-          od;
+          for i in [Minimum(a1-1,a2-1)+2..Maximum(a1,a2)] do
+                                         if a1<a2 then
+                                          ags[i]:=m2[i-1];  for j in [1..k] do
+                                                                  ags[i]:=Concatenation([m2[i-1][1]],ags[i]);
+                                                                            od;
+                                          else   ags[i]:=m1[i-1];   for j in [k+1..Length(s)+1] do
+                                                                                 ags[i]:=Concatenation(ags[i],[m1[i-1][k]]);
+                                                                                                od;
+                                            fi;
+                                                          od;
+        Add(Temp,ags);
+ else
+                      if Length(Ins21)<>0 and Length(Ins22)<>0 then
+                                                 ags:=List([1..Maximum(a1,a2)]);
+                                                ags[1]:=Concatenation(m1[Ins21[1]],m2[Ins22[1]]);
+                                               RemoveSet(m1,m1[Ins21[1]]); RemoveSet(m2,m2[Ins22[1]]);
+                                                                              for i in [1..Minimum(a1-1,a2-1)] do
+                                                                                     ags[i+1]:=Concatenation(m1[i],m2[i]);
+                                                                                                               od;
+                                    for i in [Minimum(a1-1,a2-1)+2..Maximum(a1,a2)] do
+                                                                    if a1<a2 then ags[i]:=m2[i-1];
+                                                                                        for j in [1..k] do
+                                                                                                  ags[i]:=Concatenation([m2[i-1][1]],ags[i]);
+                                                                                                        od;
+                                                                                else   ags[i]:=m1[i-1];  for j in [k+1..Length(s)+1] do
+                                                                                                          ags[i]:=Concatenation(ags[i],[m1[i-1][k]]);
+                                                                                                                                     od;
+                                                                     fi;
+                                                                                    od;
+         Add(Temp,ags);
+                        else
+                         ags:=List([1..Minimum(Maximum(a1+1,a2),Maximum(a1,a2+1))]);
+                             if a1+1<=a2 then
+                                    if Minimum(s)<> m2[1][1] then
+                                       ags[1]:=m2[1];
+                                              for i in [1..k] do
+                                                    ags[1]:=Concatenation([Minimum(s)],ags[1]);
+                                                              od;
+                                   else
+                                     ags[1]:=m2[1];
+                                             for i in [1..k] do
+                                                     ags[1]:=Concatenation([Minimum(s)+1],ags[1]);
+                                                             od;
+                                      fi;
+                                           for i in [2..a1+1] do
+                                                     ags[i]:=Concatenation(m1[i-1],m2[i]);
+                                                              od;
+                                           for i in [a1+2..a2] do ags[i]:=m2[i];
+                                                                          for j in [1..k] do
+                                                                          ags[i]:=Concatenation([m2[i][1]],ags[i]);
+                                                                                          od;
+                                                               od;
+                               fi;
+                                  if a2+1<=a1 then
+                                        if Minimum(s)<> m1[1][k] then
+                                          ags[1]:=m1[1];
+                                                for i in [k+1..Length(s)+1] do
+                                                 ags[1]:=Concatenation(ags[1],[Minimum(s)]);
+                                                                            od;
+                                          else
+                                               ags[1]:=m1[1];
+                                               for i in [k+1..Length(s)+1] do
+                                                        ags[1]:=Concatenation(ags[1],[Minimum(s)+1]);
+                                                                          od;
+                                          fi;
+                                              for i in [2..a2+1] do
+                                                      ags[i]:=Concatenation(m1[i],m2[i-1]);
+                                                                 od;
+                                                        for i in [a2+2..a1] do ags[i]:=m1[i];
+                                                                        for j in [k+1..Length(s)+1] do
+                                                                       ags[i]:=Concatenation(ags[i],[m1[1][k]]);
+                                                                                                    od;
+                                                                            od;
+                                    fi;
+                                         if a1=a2 then
+                                               l1:=List([1..k],i->Minimum(s));
+                                               l2:=List([k+1..Length(s)+1],i->Minimum(s)+1);
+                                                     ags[1]:=Concatenation(l1,l2);
+                                                                       for i in [1..a2] do
+                                                                             ags[i+1]:=Concatenation(m1[i],m2[i]);
+                                                                                        od;
+                                        fi;
+                         Add(Temp,ags);
    fi;
-     return ags;
-  end;
+
+          fi;
+od;
+A:=Temp[First([1..Length(Ins)], j->Length(Temp[j])=Minimum(List([1..Length(Ins)],i->Length(Temp[i]))))];
+   return A;
+end;
   # tests if m is a multiplicity sequence
   ismultseq := function(m)
       local n;
