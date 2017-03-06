@@ -54,9 +54,9 @@ arfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
     for i in [2..a1+1] do
       ags[i]:=Concatenation(m1[i-1],m2[i]);
     od;
-    for i in [a1+2..a2] do
+    for i in [a1+2..a2] do ags[i]:=m2[i];
                   for j in [1..k] do
-                      ags[i]:=Concatenation([m2[i][1]],m2[i]);
+                      ags[i]:=Concatenation([m2[i][1]],ags[i]);
                     od;
                   od;
     fi;
@@ -74,9 +74,9 @@ arfCharactersOfMultiplicitySequenceListAndRamificationVector:=function(M,k)
    for i in [2..a2+1] do
          ags[i]:=Concatenation(m1[i],m2[i-1]);
     od;
-    for i in [a2+2..a1] do
+    for i in [a2+2..a1] do ags[i]:=m1[1];
                  for j in [k+1..Length(s)+1] do
-                    ags[i]:=Concatenation(m1[i],[m1[1][k]]);
+                    ags[i]:=Concatenation(ags[i],[m1[1][k]]);
                     od;
                   od;
     fi;
@@ -186,7 +186,6 @@ fi;
 od;
   return H1;
 end;
-
 
 #################################################
 ##
