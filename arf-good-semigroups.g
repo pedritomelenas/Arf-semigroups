@@ -1422,3 +1422,199 @@ for i in [1..gen+1] do
 od;
 return ags;
 end;
+#####################################################
+#F VectorToSmallElements:=function(M,k)
+## M is a list of multiplicity sequences
+## k is the ramification vector
+## The ouput is the set of the small elements of the Arf local good semigroup
+## associated to M and k
+#####################################################
+VectorToSmallElements:=function(M,k)
+  local n,i,SEvec,vec,vectorToTree,ismultseq,inarf,Semigroupelem,len;
+
+
+  # length of a multiplicity sequence
+  len := function(l)
+    local fone;
+    fone:=First([1..Length(l)], x->l[x]=1);
+    if fone=fail then
+      return Length(l);
+    fi;
+    if fone=1 then
+      return 1;
+    fi;
+    return fone-1;
+  end;
+  # tests whether x is in the Arf semigroup with multiplicity
+  # sequence j
+  inarf:=function(x,j)
+      local l;
+      if x>Sum(j) then
+        return true;
+      fi;
+      if x=0 then
+        return true;
+      fi;
+      if x<j[1] then
+        return false;
+      fi;
+      l:=List([1..Length(j)], i-> Sum(j{[1..i]}));
+      return x in l;
+  end;
+
+  # tests if m is a multiplicity sequence
+  ismultseq := function(m)
+      local n;
+      n:=Length(m);
+      return ForAll([1..n-1], i-> inarf(m[i], m{[i+1..n]}));
+  end;
+  # translates vectors of ramifications to tree
+  vectorToTree:=function(v,M)
+    local edges, nodes, depth, level, k, id, i, j, pn, nd, leaves, sons, max, n, Mh;
+
+    max:= Maximum(List(M, Length));
+    n:=Length(M);
+    id:=IdentityMat(n);
+    depth:=Maximum(Maximum(v)+1,max+1);
+
+    Mh:=ShallowCopy(M);
+    for i in [1..n] do
+        Mh[i]:=Concatenation(Mh[i],List([Length(Mh[i])+1..depth],_->1));
+    od;
+
+    edges:=[];
+    nodes:=[];
+    leaves:=[];
+    for level in [1..depth] do
+      pn:=List([1..n], j->Mh[j][level]*id[j]);
+      #Print(pn,"\n");
+      nd:=pn[1];
+      for j in [2..n] do
+        if level<=v[j-1] then
+          nd:=nd+pn[j];
+        else
+          if Sum(nd)=1 and not(nd in leaves) then
+            Add(nodes,[nd,level]);
+            Add(leaves,nd);
+          fi;
+          if Sum(nd)>1 then
+            Add(nodes,[nd,level]);
+          fi;
+          nd:=pn[j];
+          #Print("Nodes so far for ",v," ", nodes, "\n");
+        fi;
+      od;
+      if Sum(nd)=1 and not(nd in leaves) then
+        Add(nodes,[nd,level]);
+        Add(leaves,nd);
+      fi;
+      if Sum(nd)>1 then
+        Add(nodes,[nd,level]);
+      fi;
+      #Print("Nodes so far for ",v," ", nodes, "\n");
+    od;
+
+    for level in [1..depth-1] do
+      pn:=Filtered(nodes, x->x[2]=level);
+      for nd in pn do
+        sons:=Filtered(nodes, x->(x[2]=level+1) and x[1]*nd[1]<>0);
+        #Print("Nodes connected to ",nd," are ",sons,"\n");
+        sons:=List(sons, x->[nd,x]);
+        #Print("Adding edges ",sons);
+        edges:=Union(edges, sons);
+        #Print("New edges ", edges);
+      od;
+    od;
+    return [nodes,edges];
+  end;
+
+if not(IsTable(M)) then
+  Error("The first argument must be a list of multiplicity sequences");
+fi;
+
+if not(ForAll(Union(M), IsPosInt)) then
+  Error("The argument must be a list of multiplicity sequences");
+fi;
+
+if not(ForAll(M, ismultseq)) then
+  Error("The argument must be a list of multiplicity sequences");
+fi;
+
+if not(IsList(k) and ForAll(k,IsPosInt)) then
+  Error("The second argument must be a list of positive integers");
+fi;
+
+if Length(M)-1<>Length(k) then
+  Error("There is a problem with dimensions");
+fi;
+n:=Length(M);
+
+if not(ForAll([1..n-1], i->k[i]<=CompatibilityLevelOfMultiplicitySequences([M[i],M[i+1]]))) then
+  Error("The arguments do not correspond to an Arf good semigroup (not compatible)");
+fi;
+Semigroupelem:=function(v)
+  local ags,i,j;
+  ags:=[];
+  for i in [1..n] do
+    for j in [1..v[i]] do
+      if not Filtered(vectorToTree(k,M)[1],l->l[2]=j and l[1][i]<>0) in ags then
+        Add(ags,Filtered(vectorToTree(k,M)[1],l->l[2]=j and l[1][i]<>0));
+      fi;
+    od;
+  od;
+  return Sum(List([1..Length(ags)],l->ags[l][1][1]));
+end;
+if n=1 then
+  return List([1..Length(M[1])],l->Sum(List([1..l],k->M[1][k])));
+fi;
+vec:=List([1..n],l->0);
+vec[1]:=Maximum(len(M[1]),k[1]);
+for i in [2..n-1] do
+  vec[i]:=Maximum(len(M[i]),k[i],k[i-1]);
+od;
+  vec[n]:=Maximum(len(M[n]),k[n-1]);
+
+SEvec:=function(cond,ram)
+  local ags,i,j;
+  ags:=[];
+  if Length(cond)=1 then
+    for i in [1..cond[Length(cond)]] do
+      Add(ags,[i]);
+    od;
+    return ags;
+  fi;
+  for i in SEvec(cond{[1..Length(cond)-1]},ram{[1..Length(ram)-1]}) do
+    if i[Length(cond)-1]<ram[Length(ram)] then
+      Add(ags,Concatenation(i,[ i[Length(cond)-1]])); else
+      for j in [ram[Length(ram)]..cond[Length(cond)]] do
+        Add(ags,Concatenation(i,[j]));
+      od;
+      fi;
+    od;
+return ags;
+end;
+return Concatenation([List([1..n],j->0)],List([1..Length(SEvec(vec,k))],l->Semigroupelem(SEvec(vec,k)[l])));
+end;
+ArfClosureOfGoodSemigroup:=function(Se)
+  local M, k, n, trvs,  U, MIN,i,vs,j,e,M0;
+  n:=Length(Se[1]);
+  M0:=ShallowCopy(Se);
+  RemoveSet(M0,List([1..n],i->0));
+  if not(IsRectangularTable(M0)) then
+    Error("The input must be a list of vectors (lists)");
+  fi;
+  if not(ForAll(Union(M0), IsPosInt)) then
+    Error("The vectors must have positive integer coordinates");
+  fi;
+
+ if not List([1..n],j->Maximum(List([1..Length(M0)],i->M0[i][j]))) in M0 then
+   Error("The input cannot be the set of small elements of a good semigroup (the conductor is missing)");
+ fi;
+ vs:=ShallowCopy(M0);
+e:=List([1..n],i->List([1..n],j->0));
+for i in [1..n] do
+  e[i][i]:=1;
+  Add(vs,e[i]+ List([1..n],j->Maximum(List([1..Length(M0)],i->M0[i][j]))));
+od;
+  return ArfClosureOfSetOfVectors(vs);
+end;
