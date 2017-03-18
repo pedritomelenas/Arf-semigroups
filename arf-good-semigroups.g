@@ -1595,6 +1595,12 @@ return ags;
 end;
 return Concatenation([List([1..n],j->0)],List([1..Length(SEvec(vec,k))],l->Semigroupelem(SEvec(vec,k)[l])));
 end;
+#####################################################
+#FArfClosureOfGoodSemigroup:=function(Se)
+## Se is the set of the small elements of a good semigroup
+## The ouput is the multiplicity sequence and the ramification
+vector of the Arf Closure of the good semigroup
+#####################################################
 ArfClosureOfGoodSemigroup:=function(Se)
   local M, k, n, trvs,  U, MIN,i,vs,j,e,M0;
   n:=Length(Se[1]);
