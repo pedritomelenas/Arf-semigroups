@@ -2,11 +2,11 @@
 
 Algortithms for Arf good semigroups
 
-These algorithms use the ideas by Giuseppe Zito (U Catania)ç
+These algorithms use the ideas by Giuseppe Zito (U Catania)
 
 They will be part of the [GAP](http://www.gap-system.org) package [numericalsgps](http://www.gap-system.org/Packages/numericalsgps.html).
 
-## Numerical semigroups
+## Numerical semigroups
 
 New implementations for
 
@@ -16,7 +16,7 @@ New implementations for
 1. ArfNumericalSemigroupsWithFrobeniusNumberUpTo
 
 
-## Arf good (local) semigroups
+## Arf good (local) semigroups
 
 1. MultiplicitySequenceListToTrees
 1. CompatibilityLevelOfMultiplicitySequences
@@ -26,7 +26,7 @@ New implementations for
 1. ArfGoodSemigroupFromMultiplicityTree
 1. ArfGoodSemigroupsWithConductor
 
-## Some drawing functions
+## Some drawing functions
 
 1. treeToDot
 1. splashTree
