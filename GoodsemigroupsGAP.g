@@ -1,11 +1,11 @@
 #####################################################
-#F BoundCond:=function(vs)
+#F BoundForConductorOfGoodSemigroupsContainig:=function(vs)
 ## vs is a set of vectors
 ## The ouput is a bound (if there exists) for the conductor of a good semigroup containing vs
 ## (Based on Prop 11 "Embedding Dimension of a Good Semigroup of N^2")
 #####################################################
 
-BoundCond:=function(vs)
+BoundForConductorOfGoodSemigroupsContainig:=function(vs)
     local n,i,j,trvs,tent,conductor,alpha,m,c,delta,lambda,a;
     
     n:=Length(vs[1]);
@@ -32,17 +32,16 @@ BoundCond:=function(vs)
     Error("There is not such an Arf good semigroup (infinite decreasing chain)");
     fi;
 
-#This function returns the conductors of the projections (with the convention that the conductor of N is 1)
- conductor:=function(l)
-    if 1 in l then
-      return 1;
-    fi;
-    return ConductorOfNumericalSemigroup(NumericalSemigroupByGenerators(l));
-  end;
+  #This function returns the conductors of the projections (with the convention that the conductor of N is 1)
+  conductor:=function(l)
+      if 1 in l then
+        return 1;
+      fi;
+      return ConductorOfNumericalSemigroup(NumericalSemigroupByGenerators(l));
+    end;
 
 
-#This function returns a couple of vectors that satisfy the claim of the Prop 
-  
+  #This function returns a couple of vectors that satisfy the claim of the Prop 
   tent:=function(vs,ind,ind1)
         local g,i,j,h,v1,u1,q1,q2,p1,indices,indices2,p,j1,j2;
 
@@ -159,7 +158,7 @@ BoundCond2:=function(S)
       T:=List([1..2],j->List(U[j],i->S[i][j]));
     return Filtered(List(FactorizationsIntegerWRTList(v[k]-1,T[k]),j->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),l-> l[3-k]>=v[3-k])<>[];
   end;
-  v:=BoundCond(S);
+  v:=BoundForConductorOfGoodSemigroupsContainig(S);
   while Filtered([1..2],i->Scala(S,v,i)=true)<>[] do
     v[Filtered([1..2],i->Scala(S,v,i)=true)[1]]:=v[Filtered([1..2],i->Scala(S,v,i)=true)[1]]-1;
   od;
