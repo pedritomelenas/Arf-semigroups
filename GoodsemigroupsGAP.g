@@ -5,8 +5,8 @@
 ## (Based on Prop 11 "Embedding Dimension of a Good Semigroup of N^2")
 #####################################################
 
-BoundForConductorOfGoodSemigroupsContainig:=function(vs)
-    local n,i,j,trvs,tent,conductor,alpha,m,c,delta,lambda,a, v, Scala;
+BoundForConductorOfGoodSemigroupsContaining:=function(vs)
+    local n,i,j,trvs,tent,conductor,alpha,m,c,delta,lambda,a,bound,Scale,Scalecond;
     
     n:=Length(vs[1]);
     
@@ -23,7 +23,7 @@ BoundForConductorOfGoodSemigroupsContainig:=function(vs)
     #On each component the Gcd of the elements has to be 1 (First Hypothesis of the Prop)
     trvs:=TransposedMat(vs);
     if not(ForAll(trvs, v-> Gcd(v)=1)) then
-    Error("The gcd of the coordinates must be 1 for all coordinates (infinite decreasing chain)");
+      Error("The gcd of the coordinates must be 1 for all coordinates (infinite decreasing chain)");
     fi;
     
     #Not all the elements can have the same couple of component equal (Second Hypothesis of the Prop)
@@ -37,8 +37,8 @@ BoundForConductorOfGoodSemigroupsContainig:=function(vs)
       if 1 in l then
         return 1;
       fi;
-      return Conductor(NumericalSemigroup(l));
-    end;
+        return Conductor(NumericalSemigroup(l));
+  end;
 
 
   #This function returns a couple of vectors that satisfy the claim of the Prop 
@@ -66,8 +66,8 @@ BoundForConductorOfGoodSemigroupsContainig:=function(vs)
             return Set([g,h]);
             
             
-            #If g and h have not the ind1 component equal we build from g and h a couple of vector in the 
-            #semigroup with ind1 component equal, will be returned the couple (v1,u1) ordered respect the different component.
+          #If g and h have not the ind1 component equal we build from g and h a couple of vector in the 
+          #semigroup with ind1 component equal, will be returned the couple (v1,u1) ordered respect the different component.
           else
             v1:=h*Lcm(h[ind1],g[ind1])/h[ind1];
             u1:=g*Lcm(h[ind1],g[ind1])/g[ind1];
@@ -129,51 +129,47 @@ BoundForConductorOfGoodSemigroupsContainig:=function(vs)
   lambda[i]:=StructuralCopy(a);
   od;
 
+  #We can compute the bound of the conductor, adding the elements of the lists lambda+alpha.
+  bound:=Sum([1..n],k->(lambda+alpha)[k]);
 
-  #We have the bound of the conductor, obtained adding the Elements of the list lambda+alpha
-  v:=Sum([1..n],k->(lambda+alpha)[k]);
+
+  #In case of more branches the function return this bound
   if n>2 then 
-    return v;
+    return bound;
   fi;
-  Scala:=function(S,v,k)
-    local U,T;
-    U:=List([1..2],j->Filtered([1..Length(S)],i->S[i][j]<>infinity));
+
+
+  #Refining of the Bound in Case of Good Semigroup of N^2
+
+
+  #The function Scale take in input the set of vector vs, the previous bound and the component k.
+  #It returns true if the bound can be refined of the component k, otherwise it returns false.
+
+  Scale:=function(S,bound,k)
+      local U,T;
+
+      U:=List([1..2],j->Filtered([1..Length(S)],i->S[i][j]<>infinity));
       T:=List([1..2],j->List(U[j],i->S[i][j]));
-    return ForAny(List(FactorizationsIntegerWRTList(v[k]-1,T[k]),j->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),l-> l[3-k]>=v[3-k]);
-  end;
-  while Filtered([1..2],i->Scala(S,v,i))<>[] do
-    v[Filtered([1..2],i->Scala(S,v,i))[1]]:=v[Filtered([1..2],i->Scala(S,v,i))[1]]-1;
+      
+      return ForAny(List(FactorizationsIntegerWRTList(bound[k]-1,T[k]),j
+                ->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),l-> l[3-k]>=bound[3-k]);
+    
+    end;
+
+  #Now we check in which components it is possible to refine the conductor and we update the 
+  #bound decreasing the component where is it possible to refine.
+  Scalecond:=Filtered([1..2],i->Scale(S,bound,i));
+  while Scalecond<>[] do
+  if Length(Scalecond)=2 then
+  bound:=bound-1;
+  else
+  bound[Scalecond[1]]:=bound[Scalecond[1]]-1;
+  fi;
+  Scalecond:=Filtered([1..2],i->Scale(S,bound,i));
   od;
-  return v;
+  return bound;
 
 end;
     
-#####################################################
-#F BoundCond2:=function(S)
-## S is a set of vectors of N^2
-## The ouput is a bound (if there exists) for the conductor of a good semigroup containing S
-#####################################################
- Scala:=function(S,v,k)
-    local U,T;
-    U:=List([1..2],j->Filtered([1..Length(S)],i->S[i][j]<>infinity));
-      T:=List([1..2],j->List(U[j],i->S[i][j]));
-    return Filtered(List(FactorizationsIntegerWRTList(v[k]-1,T[k]),
-    j->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),
-    l-> l[3-k]>=v[3-k])<>[];
-  end;
 
-BoundCond2:=function(S)
-  local v,Scala;
-  Scala:=function(S,v,k)
-    local U,T;
-    U:=List([1..2],j->Filtered([1..Length(S)],i->S[i][j]<>infinity));
-      T:=List([1..2],j->List(U[j],i->S[i][j]));
-    return Filtered(List(FactorizationsIntegerWRTList(v[k]-1,T[k]),j->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),l-> l[3-k]>=v[3-k])<>[];
-  end;
-  v:=BoundForConductorOfGoodSemigroupsContainig(S);
-  while Filtered([1..2],i->Scala(S,v,i)=true)<>[] do
-    v[Filtered([1..2],i->Scala(S,v,i)=true)[1]]:=v[Filtered([1..2],i->Scala(S,v,i)=true)[1]]-1;
-  od;
-  return v;
-end;
 
