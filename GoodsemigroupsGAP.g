@@ -139,10 +139,10 @@ BoundForConductorOfGoodSemigroupsContainig:=function(vs)
     local U,T;
     U:=List([1..2],j->Filtered([1..Length(S)],i->S[i][j]<>infinity));
       T:=List([1..2],j->List(U[j],i->S[i][j]));
-    return Filtered(List(FactorizationsIntegerWRTList(v[k]-1,T[k]),j->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),l-> l[3-k]>=v[3-k])<>[];
+    return ForAny(List(FactorizationsIntegerWRTList(v[k]-1,T[k]),j->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),l-> l[3-k]>=v[3-k]);
   end;
-  while Filtered([1..2],i->Scala(S,v,i)=true)<>[] do
-    v[Filtered([1..2],i->Scala(S,v,i)=true)[1]]:=v[Filtered([1..2],i->Scala(S,v,i)=true)[1]]-1;
+  while Filtered([1..2],i->Scala(S,v,i))<>[] do
+    v[Filtered([1..2],i->Scala(S,v,i))[1]]:=v[Filtered([1..2],i->Scala(S,v,i))[1]]-1;
   od;
   return v;
 
