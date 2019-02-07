@@ -17,13 +17,8 @@ end;
 #####################################################
 
 CompareGS:=function(v,w)
-  local a,i;
-  a:=true;
-  for i in [1..Length(v)] do
-    a:=a and v[i]<=w[i]; 
-  od;
-  return a;
-  end;
+    return ForAll([1..Length(v)], i->v[i]<=w[i]);
+end;
 
 
 
