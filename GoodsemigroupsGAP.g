@@ -33,12 +33,12 @@ end;
 IsContainedGS:=function(S1,S2)
   local i;
   #We order the elements of the good semigroups putting the conductor as last small element.
-  Set(S1);
-  Set(S2);
+  Small1:=SmallElements(S1);
+  Small2:=SmallElements(S2)
   #We start comparing the conductors, if the conductor of S2 it is not smaller than the conductor of S1 the answer is certainly false.
   #Otherwise we check if all the elements of S1 stay in S2.
-  if CompareGS(S2[Length(S2)],S1[Length(S1)]) then
-  return ForAll(S1, i->MinimumGS(i,S2[Length(S2)]) in S2); 
+  if CompareGS(Small2[Length(Small2)],Small1[Length(Small1)]) then
+  return ForAll(Small1, i->MinimumGS(i,Small2[Length(Small2)]) in Small2); 
   fi;
   return false;
 end;
