@@ -33,195 +33,14 @@ end;
 IsContainedGS:=function(S1,S2)
   local i;
   #We order the elements of the good semigroups putting the conductor as last small element.
-  Small1:=SmallElements(S1);
-  Small2:=SmallElements(S2)
+  Small1:=SmallElementsOfGoodSemigroup(S1);
+  Small2:=SmallElementsOfGoodSemigroup(S2);
   #We start comparing the conductors, if the conductor of S2 it is not smaller than the conductor of S1 the answer is certainly false.
   #Otherwise we check if all the elements of S1 stay in S2.
-  if CompareGS(Small2[Length(Small2)],Small1[Length(Small1)]) then
-  return ForAll(Small1, i->MinimumGS(i,Small2[Length(Small2)]) in Small2); 
+  if CompareGS(Conductor(S2),Conductor(S1)) then
+  return ForAll(Small1, i->MinimumGS(i,Conductor(S2)) in Small2); 
   fi;
   return false;
-end;
-
-
-
-
-
-#####################################################
-#F BoundForConductorOfGoodSemigroupsContainig:=function(vs)
-## vs is a set of vectors
-## The ouput is a bound (if there exists) for the conductor of a good semigroup containing vs
-## (Based on Prop 11 "Embedding Dimension of a Good Semigroup")
-#####################################################
-
-BoundForConductorOfGoodSemigroupsOfNdContaining:=function(vs)
-    local n,i,j,trvs,tent,conductor,alpha,m,c,delta,lambda,a,bound,Scale,Scalecond;
-    
-    n:=Length(vs[1]);
-    
-    #The element in the of the input set of vector has to be the same length.
-    if not(IsRectangularTable(vs)) then
-      #Error("The input must be a list of vectors (lists)");
-      return fail;
-    fi;
-
-    #The semigroup has to be a subset of N^{n}.
-    if not(ForAll(Union(vs), IsPosInt)) then
-      #Error("The vectors must have positive integer coordinates");
-      return fail;
-    fi;
-
-    #On each component the Gcd of the elements has to be 1 (First Hypothesis of the Prop)
-    trvs:=TransposedMat(vs);
-    if not(ForAll(trvs, v-> Gcd(v)=1)) then 
-      #Error("The gcd of the coordinates must be 1 for all coordinates (infinite decreasing chain)");
-       return fail; 
-    fi;
-    
-    #Not all the elements can have the same couple of component equal (Second Hypothesis of the Prop)
-    #Ex: (3,5,7,5),(2,9,8,9),(5,7,2,7) is not an ammissible set.
-    if not(ForAll(Filtered(Cartesian([1..n],[1..n]),i->i[1]<i[2]), i->ForAny(vs, g-> g[i[1]]<>g[i[2]]))) then
-      #Error("There is not such an Arf good semigroup (infinite decreasing chain)");
-      return fail;
-    fi;
-
-  #This function returns the conductors of the projections (with the convention that the conductor of N is 1)
-  conductor:=function(l)
-      if 1 in l then
-        return 1;
-      fi;
-        return Conductor(NumericalSemigroup(l));
-  end;
-
-
-  #This function returns a couple of vectors that satisfy the claim of the Prop 
-  tent:=function(vs,ind,ind1)
-        local g,i,j,h,v1,u1,q1,q2,p1,indices,indices2,p,j1,j2;
-
-        #Case of two-branches
-        if Length(ind)=2 then
-          #OPTIMIZED CHOICE
-          g:=StructuralCopy(First(vs,i->i[ind[1]]<>i[ind[2]]));
-          h:=StructuralCopy(First(vs,i->i[ind[2]]*g[ind[1]]<>i[ind[1]]*g[ind[2]]));
-          for i in [1..Length(vs)] do
-            for j in [i+1..Length(vs)] do
-              if Lcm(vs[i][ind1],vs[j][ind1])<Lcm(g[ind1],h[ind1]) and vs[i][ind[1]]*vs[j][ind[2]]<>vs[i][ind[2]]*vs[j][ind[1]] then
-                g:=StructuralCopy(vs[i]);
-                h:=StructuralCopy(vs[j]);
-              fi;
-            od;
-          od;
-          # g:=First(vs,i->i[ind[1]]<>i[ind[2]]);
-          # h:=First(vs,i->i[ind[2]]*g[ind[1]]<>i[ind[1]]*g[ind[2]]);
-            
-          #If g and h have the ind1 component equal, will be returned the couple (g,h) ordered respect the different component. 
-          if g[ind1]=h[ind1] then
-            return Set([g,h]);
-            
-            
-          #If g and h have not the ind1 component equal we build from g and h a couple of vector in the 
-          #semigroup with ind1 component equal, will be returned the couple (v1,u1) ordered respect the different component.
-          else
-            v1:=h*Lcm(h[ind1],g[ind1])/h[ind1];
-            u1:=g*Lcm(h[ind1],g[ind1])/g[ind1];
-            return Set([v1,u1]);
-          fi;            
-        fi;
-
-        #if lenght(ind) is greater then 2
-        j1:=First([1..Length(ind)],i->ind[i]<>ind1);
-        j2:=First([1..Length(ind)],i->ind[i]<>ind1 and ind[i]<>j1);
-    
-        indices:=Concatenation(ind{[1..j1-1]},ind{[j1+1..Length(ind)]});
-        p:=tent(vs,indices,ind1);
-          
-        if p[1][ind[j1]]<p[2][ind[j1]]  then
-          return [p[1],p[2]];
-        else 
-          if p[1][ind[j1]]>p[2][ind[j1]] then
-            q1:=List([1..Length(p[1])],i->Minimum(2*p[1][i],2*p[2][i]));
-            q2:=List([1..Length(p[1])],i->p[1][i]+p[2][i]);
-            return [q1,q2];
-        
-          else indices2:=Concatenation(ind{[1..j2-1]},ind{[j2+1..Length(ind)]});
-            p1:=tent(vs,indices2,ind1);
-            if p1[1][ind[j2]]<p1[2][ind[j2]]  then
-              return [p1[1],p1[2]];
-            else 
-              if p1[1][ind[j2]]>p1[2][ind[j2]] then
-                q1:=List([1..Length(p1[1])],i->Minimum(2*p1[1][i],2*p1[2][i]));
-                q2:=List([1..Length(p1[1])],i->p1[1][i]+p1[2][i]);
-                return [q1,q2];
-              else
-                v1:=List([1..Length(p1[1])],i->p[1][i]+p1[1][i]);
-                u1:=List([1..Length(p1[1])],i->p[2][i]+p1[2][i]);
-                return [v1,u1];
-              fi;
-            fi;
-          fi;
-        fi;
-    end;
-
-  #Computation of the list List of alpha_i
-  alpha:=List([1..n],i->tent(vs,[1..n],i)[1]);
-  #Computation ofthe list of m
-  m:=List([1..n],i->alpha[i][i]);
-  #Computation of c(i)
-  c:=List(trvs,j1->conductor(j1));
-  #Computation of the list of delta^(i)
-  delta:=List([1..n],k->List(List([1..n],i->List([c[i]..c[i]+m[i]-1],j->
-    FactorizationsIntegerWRTList(j,List(vs,j1->j1[i]))[1]))[k],i1->Sum([1..Length(i1)],j3->vs[j3]*i1[j3])));
-  
-  #Computation of the list of lambda^(0)
-  lambda:=List([1..n],i->0);
-  for i in [1..n] do
-    a:=StructuralCopy(delta[i][1]);
-    for j in delta[i] do
-      a:=List([1..n],j1->Minimum(a[j1],j[j1]));
-    od;
-  lambda[i]:=StructuralCopy(a);
-  od;
-
-  #We can compute the bound of the conductor, adding the elements of the lists lambda+alpha.
-  bound:=Sum([1..n],k->(lambda+alpha)[k]);
-
-
-  #In case of more branches the function return this bound
-  if n>2 then 
-    return bound;
-  fi;
-
-
-  #Refining of the Bound in Case of Good Semigroup of N^2
-
-
-  #The function Scale take in input the set of vector vs, the previous bound and the component k.
-  #It returns true if the bound can be refined of the component k, otherwise it returns false.
-
-  Scale:=function(S,bound,k)
-      local U,T;
-
-      U:=List([1..2],j->Filtered([1..Length(S)],i->S[i][j]<>infinity));
-      T:=List([1..2],j->List(U[j],i->S[i][j]));
-      
-      return ForAny(List(FactorizationsIntegerWRTList(bound[k]-1,T[k]),j
-                ->Sum(List([1..Length(j)],i->j[i]*S[U[k][i]]))),l-> l[3-k]>=bound[3-k]);
-    
-    end;
-
-  #Now we check in which components it is possible to refine the conductor and we update the 
-  #bound decreasing the component where is it possible to refine.
-  Scalecond:=Filtered([1..2],i->Scale(vs,bound,i));
-  while Scalecond<>[] do
-  if Length(Scalecond)=2 then
-  bound:=bound-1;
-  else
-  bound[Scalecond[1]]:=bound[Scalecond[1]]-1;
-  fi;
-  Scalecond:=Filtered([1..2],i->Scale(vs,bound,i));
-  od;
-  return bound;
-
 end;
 
 
@@ -558,7 +377,65 @@ end;
 #####################################################  
 
 SemiringGeneratedBy:=function(vs,cond)
-  local SemiringGeneratedByNaive,AddVectors,Scalecond,S,i;
+  local SemiringGeneratedByNaive,AddVectors,ScaleCond,S,i;
+
+
+  #This function starting to the greatest element of the list vs, produce the list of possible "real conductor" decreasing by one each component of the list cond.
+  #Ex: If we have ...[35,35],[35,36],[36,34],[36,35],[36,36],[37,36]. With v:=[37,36], the function return the list [[36,35],[36,36]]. With v:=[[36,35],[36,36]]
+  #it returns [[35,35],[35,36],[36,34]] and so on.
+
+  ScaleCond:=function(vs,v)    
+        local i,ags;
+        ags:=[];
+        for i in v do
+        ags:=Union(ags,Filtered(vs,j->Sum(i)-1=Sum(j) and CompareGS(j,i)));
+        od;
+        return ags;
+  end;
+
+  #####################################################
+  #F AddVectors:=function(vs,u)
+  ## vs is a set of vector that identify a semiring, u is a generic set of vector
+  ## The ouput is the semiring generated by vs and u (this function is faster than apply SemiringGeneratedByNaive on Union(vs,u))
+  #####################################################
+
+  AddVectors:=function(vs,u)
+      local ClosureRespectSumAndMinimimuminUnion,ags,agsc,u1,cond,condS,temp;
+
+      ClosureRespectSumAndMinimimuminUnion:=function(vs,u,cond)
+          local ags,i,j,u1;
+          ags:=ShallowCopy(vs);
+            for i in ags do
+              for j in u do
+                if not MinimumGS(i+j,cond) in ags then
+                  ags:=Union(ags,[MinimumGS(i+j,cond)]);
+                fi;
+                if not MinimumGS(i,j) in ags then
+                  ags:=Union(ags,[MinimumGS(i,j)]);
+                fi;
+              od;
+            od;
+          return ags;
+      end;
+
+      ags:=ShallowCopy(Union(vs,u));
+      condS:=vs[Length(vs)];
+      agsc:=ClosureRespectSumAndMinimimuminUnion(ags,u,condS);
+      while ags<>agsc do
+        u1:=Filtered(agsc,i-> not i in ags);
+        ags:=ShallowCopy(agsc);
+        agsc:=ClosureRespectSumAndMinimimuminUnion(agsc,Union(u,u1),condS);
+      od;
+      temp:=[condS];    
+      while temp<>[] do
+        condS:=ShallowCopy(temp);
+        temp:=ScaleCond(agsc,temp);
+      od;
+      return Filtered(agsc,i->CompareGS(i,condS[1]));
+  end;
+
+
+
 
   #####################################################
   #F SemiringGeneratedByNaive:=function(vs,cond)
@@ -568,9 +445,6 @@ SemiringGeneratedBy:=function(vs,cond)
 
   SemiringGeneratedByNaive:=function(vs,cond)
     local Scalecond,ClosureRespectSumAndMinimimum,ags,agsc,temp;
-    
-
-
     
     #This function add to vs, all the sums of two elements of vs, and all minimums of elements of vs under the conductor.
     ClosureRespectSumAndMinimimum:=function(vs,cond)
@@ -606,59 +480,7 @@ SemiringGeneratedBy:=function(vs,cond)
     return Filtered(agsc,i->CompareGS(i,cond[1]));
   end;
 
-  #####################################################
-  #F AddVectors:=function(vs,u)
-  ## vs is a set of vector that identify a semiring, u is a generic set of vector
-  ## The ouput is the semiring generated by vs and u (this function is faster than apply SemiringGeneratedByNaive on Union(vs,u))
-  #####################################################
-
-  AddVectors:=function(vs,u)
-    local ScaleCond,ClosureRespectSumAndMinimimuminUnion,ags,agsc,u1,cond,condS,temp;
-
-    ClosureRespectSumAndMinimimuminUnion:=function(vs,u,cond)
-        local ags,i,j,u1;
-        ags:=ShallowCopy(vs);
-          for i in ags do
-            for j in u do
-              if not MinimumGS(i+j,cond) in ags then
-                ags:=Union(ags,[MinimumGS(i+j,cond)]);
-              fi;
-              if not MinimumGS(i,j) in ags then
-                ags:=Union(ags,[MinimumGS(i,j)]);
-              fi;
-            od;
-          od;
-        return ags;
-    end;
-
-    ags:=ShallowCopy(Union(vs,u));
-    condS:=vs[Length(vs)];
-    agsc:=ClosureRespectSumAndMinimimuminUnion(ags,u,condS);
-    while ags<>agsc do
-      u1:=Filtered(agsc,i-> not i in ags);
-      ags:=ShallowCopy(agsc);
-      agsc:=ClosureRespectSumAndMinimimuminUnion(agsc,Union(u,u1),condS);
-    od;
-    temp:=[condS];    
-    while temp<>[] do
-      condS:=ShallowCopy(temp);
-      temp:=path(agsc,temp);
-    od;
-    return Filtered(agsc,i->CompareGS(i,condS[1]));
-  end;
-
-  #This function starting to the greatest element of the list vs, produce the list of possible "real conductor" decreasing by one each component of the list cond.
-  #Ex: If we have ...[35,35],[35,36],[36,34],[36,35],[36,36],[37,36]. With v:=[37,36], the function return the list [[36,35],[36,36]]. With v:=[[36,35],[36,36]]
-  #it returns [[35,35],[35,36],[36,34]] and so on.
-
-  ScaleCond:=function(vs,v)    
-      local i,ags;
-      ags:=[];
-      for i in v do
-      ags:=Union(ags,Filtered(vs,j->Sum(i)-1=Sum(j) and CompareGS(j,i)));
-      od;
-      return ags;
-  end;
+  
 
   S:=SemiringGeneratedByNaive([vs[1]],cond);
   for i in [2..Length(vs)] do
@@ -680,13 +502,253 @@ end;
 
 
 
+###################################################################################################################################
+###
+### EDIM(S)
+###
+###################################################################################################################################
 
 
 
+#####################################################
+#F ALLtrack:=function(S)
+## S is a good semigroup of N^2 
+## The ouput is the set of all tracks of S
+#####################################################
+
+AllTrack:=function(S)
+  local I,RemoveLabels,GluePieceOfTrack,ComputePieceOfTrack,T,temp;
+  
+  #It glue a new piece of track to an existing track. T is the list of all piece of track. V is a list of two elements, V[1] 
+  #represents not complete tracks and V[2] the complete tracks. 
+  #The function add a new piece to the incomplete tracks and returns the updated V.
+  GluePieceOfTrack:=function(T,V)
+    local ags,temp,i,j;
+    ags:=[[],[]];
+    ags[2]:=ShallowCopy(V[2]);
+    for i in V[1] do
+      temp:=i[Length(i)];
+      if temp="last" then 
+        ags[2]:=Union(ags[2],[i]); 
+      else
+        for j in Filtered(T,k->k[1]=temp) do
+          ags[1]:=Union(ags[1],[Concatenation(i,[j[2]])]);
+        od; 
+      fi; 
+    od;
+    return ags;
+  end;
+
+  #This funcion compute all possibles piece of track of a good semigroups having irriducible absolutes I
+  ComputePieceOfTrack:=function(I)
+    local IsAPOT,MaximalRed,ags,first,last,i;
+
+    #It check if between two irreducible absolutes there is a piece of track. It check if  their minimum overcome
+    #the maximum  in both direction or is equal to this one in entrambe le direzioni o coincide
+    IsAPOT:=function(a,b)
+        local min;
+        if CompareGS(a[1],b[1]) or CompareGS(b[1],a[1]) then return false; else if a[1][1]>b[1][1] then return false; else
+
+        min:=MinimumGS(a[1],b[1]); return min[2]>=a[3] and min[1]>=b[2];
+        fi; fi;
+    end;
+
+    #Se (x,y) è irr assoluto ritorna (x1,y1), dove (x,y1) è il più grande irr assoluto sotto (x,y) e (x1,y) il più grande irr assoluto
+    #a sinistra di (x,y).
+    MaximalRed:=function(v,I)
+      local Factorize,ind,temp,temp2,temp3;
+
+      Factorize:=function(n,l)
+          local a,b,ags,i,c,j,a1;
+
+          if l=[] then 
+            return [];
+
+          else
+            a1:=Filtered([1..Length(l)],i->l[i]<>infinity);
+            a:=List(a1,k->l[k]);
+            b:=FactorizationsIntegerWRTList(n,a);
+            ags:=[];
+              for i in b do
+                c:=List([1..Length(l)],o->0);
+                j:=1; 
+                while j<=Length(a1) do
+                  c[a1[j]]:=i[j]; j:=j+1; 
+                od;
+                ags:=Union(ags,[c]);
+              od;
+            return ags; 
+          fi;
+          
+      end;
+
+      if not v in I then 
+      return [0,0]; 
+        
+      else 
+        if infinity in v then
+        temp3:=[0,0];
+        ind:=First([1,2],i->v[i]<>infinity);
+        temp3[3-ind]:=0;
+        temp:=Filtered(I,i->i[ind]<v[ind]);
+        temp2:=List(List(Factorize(v[ind],List(temp,i->i[ind])),j->Sum(List([1..Length(j)],k->j[k]*temp[k]))),k1->k1[3-ind]);
+            
+          if temp2=[] then 
+          temp3[ind]:=0; 
+          return Reversed(temp3); 
+            
+          else
+          temp3[ind]:=Maximum(temp2);
+          return Reversed(temp3); 
+          fi; 
+        else
+        temp3:=[0,0];
+          
+          for ind in [1,2] do
+          temp:=Filtered(I,i->i[ind]<v[ind]);
+          temp2:=List(List(Factorize(v[ind],List(temp,i->i[ind])),j->Sum(List([1..Length(j)],k->j[k]*temp[k]))),k1->k1[3-ind]);
+              
+            if temp2=[] then  
+            temp3[ind]:=0; 
+            else
+            temp3[ind]:=Maximum(temp2); 
+            fi; 
+          od; 
+        return Reversed(temp3); 
+        fi;  
+      fi;
+    end;
 
 
+    #Se (x,y) è irr assoluto ritorna ((x,y),x1,y1), dove (x,y1) è il più grande irr assoluto sotto (x,y) e (x1,y) il più grande irr assoluto
+    #a sinistra di (x,y).
+    I:=List(I,i->Concatenation([i],MaximalRed(i,I)));
+
+    #Aggiungiamo tutti i pezzi di tragitto
+    ags:=List(Filtered(Cartesian(I,I),i->IsAPOT(i[1],i[2])),k->[k[1][1],k[2][1]]);
+
+    #Aggiungiamo i punti di inizio e fine
+    first:=Filtered(I,i->i[2]=0);
+    last:=Filtered(I,i->i[3]=0);
+
+    for i in first do
+    ags:=Union(ags,[["first",i[1]]]); 
+    od;
+
+    for i in last do
+    ags:=Union(ags,[[i[1],"last"]]); 
+    od;
+
+    return ags;
+  end;
+
+  #This function removes the label "first" and "last" in the tracks.
+  RemoveLabels:=function(T)
+    return List(T,i->Filtered(i,j->j<>"last" and j<>"first"));
+  end;
+
+  I:=IrriducibleAbsolutesofSemiring(S);
+  T:=ComputePieceOfTrack(I);
+  
+  #The idea is create the list of all tracks, adding one by one the piece of tracks in all possible way, reccalling
+  #GluePieceOfTrack until all possible track are completed (V[1]=[])
+  temp:=[[["first"]],[]];
+  temp:=GluePieceOfTrack(T,temp);
+
+  while temp[1]<>[] do 
+  temp:=GluePieceOfTrack(T,temp);
+  od;
+  
+  return RemoveLabels(temp[2]);
+
+end;
 
 
+#####################################################
+#F ComputeMHS:=function(S)
+## S is a good semigroup of N^2 
+## The ouput is the list of all Minimal Hitting Set of S
+#####################################################
+
+ComputeMHS:=function(S)
+  local I,AllTrackInt,HittingSetsFromTrack;
+
+  #This function takes the irriducible absolutes I of the good semigroup S and changes them in numbers 
+  #to increase the speed of the algorithm
+  AllTrackInt:=function(S,I)
+    local T,ChangeIrrInInt;
+    
+    #This function takes a list of irriducible absolutes and changes the elements of the list in numbers according to
+    #their positions.
+    ChangeIrrInInt:=function(T,v)
+      local IntVert;
+      #In internal function that given an irriducible absolute v assigns to it, the number of this position in the list T
+      IntVert:=function(T,v)
+        if not v in T then 
+        return fail;
+
+        else
+        return First([1..Length(T)],i->T[i]=v); 
+        fi;
+      end;
+      return List(v,j->IntVert(T,j));
+    end;
+
+    T:=AllTrack(S);
+    return List(T,i->ChangeIrrInInt(I,i));
+  end;
+
+  #An algorithm that, given the list of all tracks T, of a good semigroup, compute all MHS
+  HittingSetsFromTrack:=function(T)
+    local m,D,i,j,k;
+
+    #A function similar to concatenation but without repetition, we don't use "union" because it is faster
+    ConcatenationWithouRepetitions:=function(L)
+      local i,ags,ConcatenationOfTwoListsWithouRepetitions;
+
+      ConcatenationOfTwoListsWithouRepetitions:=function(S,T)
+        local U,i;
+        U:=ShallowCopy(S);
+        for i in T do
+          if not i in U then
+          U:=Concatenation(U,[i]);
+          fi; 
+        od;
+        return U;
+      end;
+
+      ags:=[];
+      for i in [1..Length(L)] do
+        ags:=ConcatenationOfTwoListsWithouRepetitions(ags,L[i]); 
+      od;
+      return ags;
+    end;
+
+    m:=Length(T);
+    D:=List([1..m+1],i->[[]]);
+    
+    for i in [2..m+1] do
+      D[i]:=[];
+      for j in D[i-1] do
+        if Intersection(j,T[i-1])<>[] then 
+          Append(D[i],[j]);     
+        else
+        Append(D[i],ConcatenationWithouRepetitions(List(Filtered(T[i-1],k1->Filtered(D[i-1],i1->i1<>j and 
+        IsSubset(Concatenation(j,[k1]),i1))=[]),k->[Concatenation(j,[k])])));  
+        fi;
+      od;
+    od;
+
+    return D[m+1];
+  end;
+
+  I:=IrriducibleAbsolutesofSemiring(S);
+  return List(HittingSetsFromTrack(AllTrackInt(S,I)),i->I{i});
+end;
+
+ComputeEdimOfAGoodSemigroup:=function(S)
+  local ComputeMHS;
+end;
 
 
 
@@ -747,86 +809,151 @@ RandomGoodSemigroup:=function(m,cond)
 end;
 
 
-RandomCandidati:=function(W)
-  local S,cond,ags,a;
-    S:=IrrAbs(W);
-    cond:=condi2(W);
-    #ags1:=Filtered(S,i->not 0 in massimo(S,i,cond) and not (conf(massimo2(S,i,cond),massimo(S,i,cond)) and #conf(massimo(S,i,cond),massimo2(S,i,cond)) ));
-    #for i in ags1 do
-    #ags1:=Union(ags1,Filtered(S,j->j[3-k]=massimo(S,i,cond)[k]));
-    #S1:=Union(S1,Filtered(S,j-> j[k]=massimo(S,i,cond)[3-k]));
-    ags:=[Essenziali(W)];
-  a:=[Length(ags[1])..Minimum(Sum(W[1]),Length(S))];
-  return RandomList(Candidati2(W,RandomList(a)));
+###################################################################################################################################
+###
+### MORE BRANCHES
+###
+###################################################################################################################################
+
+
+
+ConductorOfAGoodSemigroupN:=function(W)
+  Set(W);
+  return Reversed(W)[1];
 end;
 
-RandomCandidati2:=function(W)
-  local S,cond,ags,a;
-    S:=IrrAbs(W);
-    cond:=condi2(W);
-    #ags1:=Filtered(S,i->not 0 in massimo(S,i,cond) and not (conf(massimo2(S,i,cond),massimo(S,i,cond)) and #conf(massimo(S,i,cond),massimo2(S,i,cond)) ));
-    #for i in ags1 do
-    #ags1:=Union(ags1,Filtered(S,j->j[3-k]=massimo(S,i,cond)[k]));
-    #S1:=Union(S1,Filtered(S,j-> j[k]=massimo(S,i,cond)[3-k]));
-    ags:=[Essenziali(W)];
-  a:=[Length(ags[1])..Minimum(Sum(W[1]),Length(S))];
-  return RandomList(Candidati2(W,RandomList([CeilingOfRational((a[1]+a[Length(a)])/2)..a[Length(a)]])));
-end;
+IrriducibleAbsolutesofSemiringN:=function(W)
+  local Substitution, ExtendedSmallElements, AbsolutesOfTheGoodSemigroupN,IrreduciblesOfTheGoodSemigroupN,TransformToInfGSN;
+  Set(W);
 
-RandomGen:=function(s)
-    local m,n,a,b,coeff,degree,i,j;
-  #  m:=RandomList([1..5]);
-  m:=1;
-    if m <0 then m:=m*(-1); fi;
-      m:=m+1;
-    n:=RandomList([1..5]);
-
-      if n <0 then n:=n*(-1); fi;
-        n:=n+2;
-
-        a:=List([1..n],a->0);
-        for i in [1..n] do
-          b:=List([1..m],j->0);
-          for j in [1..m] do
-            degree:=RandomList([5..100]);  if degree<0 then degree:=degree*(-1); fi; degree:=degree+1;
-            coeff:= List([1..degree+1],i->RandomList([RandomList([1..2]),0])*RandomList([RandomList([1..2]),0])); coeff[1]:=0;
-  for k in [1..6] do coeff[k]:=0; od;
-            u:=Indeterminate(Rationals,1);
-          b[j]:=UnivariatePolynomial(Rationals,coeff,1)*u^(RandomList([RandomList([5..10]),0]));
-        #b[j]:=UnivariatePolynomial(Rationals,coeff,1);
-            if b[j]*2=b[j] then b[j]:=u^degree; fi;
-          od;
-          a[i]:=b;
-        od;
-    return a;
-end;
-
-Randomtest:=function(m,cond)
-  local S,S1;
-  Wtest:=RandomGoodSemigroup(m,cond);
-  atest:=RandomCandidati(Wtest);
-  temp:=BoundCond4(atest);
-  if temp<>fail then
-  S:=testa22(Wtest,atest,temp);
-  else S:=testa22(Wtest,atest,Wtest[1]+Reversed(Wtest)[1]); fi;
-  S1:=Intersection(List(S,i->IrrAbs(i)));
-  return Intersection(S1,IrrAbs(Wtest))=Scartabili4(Wtest,atest);
+  TransformToInfGSN:=function(v,c)
+      local a,temp,i;
+      a:=ShallowCopy(v);
+      temp:=Filtered([1..Length(v)],i->v[i]=c[i]);
+      for i in temp do 
+        a:=Substitution(a,i,infinity); 
+      od;
+      return a;
   end;
-  Essenziali:=function(W)
-  local S;
-  S:= List([1,2],i->Set(Esteso(W),j->j[i]));
-  k:=List(S,i->MinimalGeneratingSystemOfNumericalSemigroup(NumericalSemigroupByGenerators(i)));
-  return Filtered(IrrAbs(W),i->i[1] in k[1] and i[2] in k[2]);
+
+  Substitution:=function(v,i,new)
+    local a;
+    a:=ShallowCopy(v);
+    a[i]:=new;
+    return a;
+  end;
+
+  ExtendedSmallElements:=function(W)
+    local cond,S,i,j,k,inter;
+    
+    inter:=function(v,w)
+      local ags,i,j,temp;
+      if Length(v)=1 then
+        ags:=[];
+        for i in [v[1]..w[1]] do
+          ags:=Union(ags,[[i]]);
+        od;   else ags:=[];
+          temp:=inter(v{[1..Length(v)-1]},w{[1..Length(v)-1]});
+        for i in temp do
+          for j in [v[Length(v)]..w[Length(v)]] do
+            ags:=Union(ags,[Concatenation(i,[j])]);
+          od;
+        od;
+      fi;
+      return ags;
+    end;
+
+    cond:=Reversed(W)[1];
+    S:=ShallowCopy(W);
+    for k in [1..Length(cond)] do
+      for i in Filtered(S,j->j[k]=cond[k]) do
+        for j in [cond[k]+1..cond[k]+S[1][k]] do
+          S:=Concatenation(S,[Substitution(i,k,j)]); 
+        od; 
+      od; 
+    od;
+    #uno:=List([1..Length(cond)],i->1);
+    return  Union(S,inter(Reversed(W)[1],Reversed(W)[1]+W[1])); 
+  end;
+
+  AbsolutesOfTheGoodSemigroupN:=function(W)
+    local W1,cond,IsAbsoluteOfTheGoodSemigroupN;
+
+    IsAbsoluteOfTheGoodSemigroupN:=function(W,v)
+      local ags,i,LessInDeltaN,LessOrEqualInDeltaN,MinimumGSList;
+
+      LessInDeltaN:=function(a,b)
+        if a=infinity and b=infinity then 
+          return true; 
+        else 
+          return a<b; 
+        fi; 
+      end;
+
+      LessOrEqualInDeltaN:=function(a,b)
+        if a=b then 
+          return true; 
+        else 
+          return LessInDeltaN(a,b); 
+        fi; 
+      end;
+
+      MinimumGSList:=function(L)
+        local a;
+        a:=L[1];
+        for i in L do
+        a:=MinimumGS(a,i);
+        od;
+        return a;
+      end;
+
+      ags:=[1..Length(v)];
+      for i in [1..Length(v)] do
+        ags[i]:=Filtered(W,j1->j1<>v and LessInDeltaN(v[i],j1[i]) and ForAll(Difference([1..Length(v)],[i]),
+        k1->LessOrEqualInDeltaN(v[k1],j1[k1]))); 
+      od;
+      if [] in ags then 
+        return false; 
+      else
+      return MinimumGSList(List(ags,i->MinimumGSList(i)))=v; 
+      fi;
+    end;
+
+    W1:=ExtendedSmallElements(W);
+    cond:=Reversed(W1)[1];
+    W1:=List(W1,i->TransformToInfGSN(i,cond));
+    return List(Filtered(W1,i->not IsAbsoluteOfTheGoodSemigroupN(W1,i)),i2->TransformToInfGSN(i2,cond));
+  end;
+
+  IrreduciblesOfTheGoodSemigroupN:=function(W)
+    local W1,ags,i1,temp,cond,DifferenceGS;
+
+    DifferenceGS:=function(v,w)
+      local ags,i;
+      ags:=[];
+      for i in [1..Length(v)] do
+        if v[i]=infinity and w[i]=infinity then 
+        ags:=Concatenation(ags,[infinity]);
+        else 
+        ags:=Concatenation(ags,[v[i]-w[i]]); 
+        fi; 
+      od;
+      return ags;
+    end;
+
+    W1:=ExtendedSmallElements(W);
+    cond:=Reversed(W1)[1];
+    W1:=List(W1,i->TransformToInfGSN(i,cond));
+    ags:=[];
+    for i1 in [1..Length(W1)] do 
+      temp:=W1[i1];
+      if First([1..i1-1],j->DifferenceGS(temp,W1[j]) in W1)=fail then 
+        ags:=Concatenation(ags,[temp]); 
+      fi; 
+    od;
+    return ags;
+  end;
+
+  return Intersection(AbsolutesOfTheGoodSemigroupN(W),IrreduciblesOfTheGoodSemigroupN(W));
 end;
 
-Randomtest2:=function(m,cond)
-  local S,S1;
-  Wtest:=RandomGoodSemigroup(m,cond);
-  atest:=RandomCandidati(Wtest);
-
-
-  S:=testa22(Wtest,atest,Wtest[1]+Reversed(Wtest)[1]);
-
-  S1:=Intersection(List(S,i->IrrAbs(i)));
-  return Intersection(S1,IrrAbs(Wtest))=Scartabili4(Wtest,atest);
-end;
